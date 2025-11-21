@@ -23,6 +23,22 @@ claude mcp add --transport http zettelkasten http://localhost:8000/mcp
 claude mcp list
 ```
 
+### Health Check
+The server provides a health check endpoint for monitoring:
+```bash
+# Check server health
+curl http://localhost:8000/health
+
+# Expected response:
+# {"status":"healthy","service":"zettelkasten-mcp","transport":"http"}
+```
+
+This endpoint is useful for:
+- Docker health checks
+- Kubernetes liveness/readiness probes
+- Load balancer health monitoring
+- Automated monitoring systems
+
 ## Configuration Options
 
 ### Command-Line Arguments

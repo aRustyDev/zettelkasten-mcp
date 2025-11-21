@@ -71,6 +71,88 @@ uvicorn.run(app, host=host, port=port)
 - `allow_methods`: GET, POST, OPTIONS for MCP
 - `allow_headers`: Wildcard for flexibility
 
+## Health Check Endpoint
+
+For Docker/Kubernetes deployments, a health check endpoint is available at `/health`:
+
+```python
+async def health_check(request):
+    """Health check endpoint for Docker/Kubernetes monitoring."""
+    from starlette.responses import JSONResponse
+
+    return JSONResponse({
+        "status": "healthy",
+        "service": "zettelkasten-mcp",
+        "transport": "http"
+    })
+
+def create_app_with_health(mcp_app):
+    """Wrap MCP SSE app with health check endpoint."""
+    from starlette.routing import Route, Mount
+    from starlette.applications import Starlette
+
+    return Starlette(
+        routes=[
+            Route("/health", health_check, methods=["GET"]),
+            Mount("/", app=mcp_app),
+        ]
+    )
+```
+
+### Usage
+```python
+# Wrap the MCP app with health check
+base_app = self.mcp.sse_app()
+app = create_app_with_health(base_app)
+
+# Apply CORS if needed
+if enable_cors:
+    from starlette.middleware.cors import CORSMiddleware
+    app = CORSMiddleware(app, ...)
+
+# Run the server
+uvicorn.run(app, host=host, port=port)
+```
+
+### Response Format
+```json
+{
+  "status": "healthy",
+  "service": "zettelkasten-mcp",
+  "transport": "http"
+}
+```
+
+### Docker Health Check
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()" || exit 1
+```
+
+### Kubernetes Probes
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 3
+  periodSeconds: 10
+```
+
+### Implementation Details
+- Health check uses Starlette routing to wrap FastMCP's SSE app
+- `/health` endpoint is intercepted before MCP app
+- All other requests are passed to MCP app at root path
+- Minimal overhead - only processes `/health` requests
+- Works with and without CORS middleware
+
 ## Common Pitfalls
 
 ### 1. Wrong Method Name

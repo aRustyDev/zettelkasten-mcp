@@ -157,12 +157,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Covers configuration, security, scenarios, and troubleshooting
 
 #### Phase 12: Health Check Endpoint Planning (Completed 2025-11-21)
-- Commit: (to be added)
+- Commit: b8e73a4
 - Created comprehensive implementation plan for health check endpoint
 - Updated `HTTP_IMPLEMENTATION_PLAN.md` with Phase 12 detailed plan
 - Plan includes: implementation approach, unit tests, documentation updates
 - Addresses missing `/health` endpoint referenced in Docker healthcheck
 - Ready for implementation with 7-step plan and success criteria
+
+#### Phase 12: Health Check Endpoint Implementation (Completed 2025-11-21)
+- Commit: (to be added)
+- Implemented `/health` endpoint using Starlette routing
+- Added `health_check()` async function and `create_app_with_health()` wrapper
+- Health check wraps FastMCP SSE app without modifying MCP functionality
+- Created `tests/test_health_check.py` with 4 tests (3 passing, 1 skipped)
+- Updated developer documentation (`fastmcp-integration-guide.md`)
+- Updated user documentation (`HTTP_USAGE.md`)
+- All tests passing: 103 passed, 27 skipped, 0 failing
+- Docker health checks now work correctly
 
 ## [1.2.1] - Previous Release
 
@@ -191,9 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Phase 10: Developer Documentation
 - ✅ Phase 11: User Documentation
 - ✅ Phase 12: Health Check Endpoint Planning
-
-### In Progress
-- ⏳ Phase 12 Implementation: Health Check Endpoint
+- ✅ Phase 12: Health Check Endpoint Implementation
 
 ---
 

@@ -12,6 +12,37 @@ from zettelkasten_mcp.services.zettel_service import ZettelService
 
 logger = logging.getLogger(__name__)
 
+
+async def health_check(request):
+    """Health check endpoint for Docker/Kubernetes monitoring."""
+    from starlette.responses import JSONResponse
+
+    return JSONResponse({
+        "status": "healthy",
+        "service": "zettelkasten-mcp",
+        "transport": "http"
+    })
+
+
+def create_app_with_health(mcp_app):
+    """Wrap MCP SSE app with health check endpoint.
+
+    Args:
+        mcp_app: The MCP SSE ASGI application
+
+    Returns:
+        Starlette application with /health endpoint and MCP app mounted at root
+    """
+    from starlette.routing import Route, Mount
+    from starlette.applications import Starlette
+
+    return Starlette(
+        routes=[
+            Route("/health", health_check, methods=["GET"]),
+            Mount("/", app=mcp_app),
+        ]
+    )
+
 class ZettelkastenMcpServer:
     """MCP server for Zettelkasten."""
     def __init__(self):
@@ -627,11 +658,15 @@ class ZettelkastenMcpServer:
             # Import here to avoid dependency issues if not using HTTP
             import uvicorn
 
+            # Get the base MCP SSE app and wrap it with health check endpoint
+            base_app = self.mcp.sse_app()
+            app = create_app_with_health(base_app)
+
             if enable_cors:
                 from starlette.middleware.cors import CORSMiddleware
 
                 app = CORSMiddleware(
-                    self.mcp.sse_app(),
+                    app,
                     allow_origins=config.http_cors_origins,
                     allow_methods=["GET", "POST", "OPTIONS"],
                     allow_headers=["*"],
@@ -642,7 +677,7 @@ class ZettelkastenMcpServer:
                 uvicorn.run(app, host=host, port=port)
             else:
                 logger.info(f"Starting HTTP server on {host}:{port}")
-                uvicorn.run(self.mcp.sse_app(), host=host, port=port)
+                uvicorn.run(app, host=host, port=port)
         else:
             # Default STDIO transport
             logger.info("Starting STDIO server")
