@@ -49,6 +49,7 @@ This plan outlines the steps to add HTTP transport support to the zettelkasten-m
 ### ✅ Phase 3: Update Server Implementation - COMPLETED
 - **Date:** 2025-11-20
 - **Status:** Server implementation updated to support HTTP transport
+- **Git Commit:** b7b6265 - "feat: Implement HTTP transport in MCP server"
 - **Changes:**
   - Modified FastMCP initialization to include `json_response=config.json_response`
   - Updated `run()` method with new signature:
