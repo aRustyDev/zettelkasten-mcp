@@ -11,6 +11,10 @@ This document details the 21 failing tests from Phase 8 HTTP transport test impl
 
 This document serves as a guide for future developers who may want to improve test coverage.
 
+> **Note**: For architectural context on why these testing challenges exist, see:
+> - [ADR: Lazy Loading HTTP Dependencies](adr-lazy-loading-http-dependencies.md)
+> - [ADR: Pydantic Configuration Pattern](adr-pydantic-config-pattern.md)
+
 ---
 
 ## Test Results Summary
