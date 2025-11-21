@@ -31,6 +31,23 @@ class ZettelkastenConfig(BaseModel):
         default=os.getenv("ZETTELKASTEN_SERVER_NAME", "zettelkasten-mcp")
     )
     server_version: str = Field(default="1.2.1")
+    # HTTP Transport Configuration
+    http_host: str = Field(
+        default=os.getenv("ZETTELKASTEN_HTTP_HOST", "0.0.0.0")
+    )
+    http_port: int = Field(
+        default=int(os.getenv("ZETTELKASTEN_HTTP_PORT", "8000"))
+    )
+    http_cors_enabled: bool = Field(
+        default=os.getenv("ZETTELKASTEN_HTTP_CORS", "false").lower() == "true"
+    )
+    http_cors_origins: list[str] = Field(
+        default_factory=lambda: os.getenv("ZETTELKASTEN_HTTP_CORS_ORIGINS", "*").split(",")
+    )
+    # FastMCP HTTP settings
+    json_response: bool = Field(
+        default=os.getenv("ZETTELKASTEN_JSON_RESPONSE", "true").lower() == "true"
+    )
     # Date format for ID generation (using ISO format for timestamps)
     id_date_format: str = Field(default="%Y%m%dT%H%M%S")
     # Default note template
