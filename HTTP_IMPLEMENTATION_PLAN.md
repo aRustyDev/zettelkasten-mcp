@@ -64,7 +64,26 @@ This plan outlines the steps to add HTTP transport support to the zettelkasten-m
   - Maintained backward compatibility - STDIO remains default
   - Verified server initialization and STDIO transport still work
 
-### ⏳ Phase 4: Update Entry Point - PENDING
+### ✅ Phase 4: Update Entry Point - COMPLETED
+- **Date:** 2025-11-20
+- **Status:** Entry point updated with CLI argument support
+- **Changes:**
+  - Updated `parse_args()` in main.py:
+    - Added comprehensive help text with usage examples
+    - Added `--transport` argument (choices: stdio, http, default: stdio)
+    - Added `--host` argument for HTTP server host binding
+    - Added `--port` argument for HTTP server port configuration
+    - Added `--cors` flag to enable CORS middleware
+    - Organized arguments into logical groups (storage, logging, transport)
+  - Updated `main()` function to pass transport arguments to server.run()
+  - Fixed HTTP transport implementation:
+    - Changed from `streamable_http_app()` to `sse_app()` (correct FastMCP API)
+    - Both CORS and non-CORS HTTP paths now use `uvicorn.run()` properly
+  - Verified all transport modes work:
+    - STDIO (default) ✓
+    - HTTP on custom port ✓
+    - HTTP with CORS enabled ✓
+    - Environment variable overrides ✓
 
 ### ⏳ Phase 5: Documentation Updates - PENDING
 

@@ -30,11 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `server/mcp_server.py` to support HTTP transport:
   - Modified FastMCP initialization to enable JSON response mode
   - Updated `run()` method to accept transport, host, port, and CORS parameters
-  - Implemented HTTP transport using FastMCP's streamable-http
+  - Implemented HTTP transport using FastMCP's SSE (Server-Sent Events) API
   - Added optional CORS middleware support for browser-based clients
   - Lazy imports of HTTP dependencies (only loaded when needed)
   - Added detailed logging for transport modes
   - Maintained backward compatibility with STDIO transport
+- Updated `main.py` entry point with CLI argument support:
+  - Added `--transport` flag to choose between stdio and http
+  - Added `--host`, `--port`, and `--cors` flags for HTTP configuration
+  - Added comprehensive help text with usage examples
+  - All transport configuration falls back to environment variables or defaults
 
 ### Technical Details
 
@@ -52,12 +57,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Server continues to work with existing STDIO functionality
 
 #### Phase 3: Server Implementation (Completed 2025-11-20)
+- Commit: b7b6265
 - Updated MCP server to support both STDIO and HTTP transports
-- HTTP transport uses FastMCP's built-in streamable-http with SSE
+- HTTP transport uses FastMCP's built-in SSE (Server-Sent Events) API
 - Optional CORS middleware for browser clients
 - Lazy loading of HTTP dependencies (starlette/uvicorn)
 - Default behavior unchanged - STDIO transport remains the default
 - All changes are backward compatible
+
+#### Phase 4: Entry Point (Completed 2025-11-20)
+- Added CLI argument parsing for transport selection
+- Users can now run: `python -m zettelkasten_mcp --transport http --port 8000`
+- Comprehensive help text with examples for all transport modes
+- Fixed HTTP transport implementation to use correct FastMCP SSE API
+- Verified all transport modes: STDIO (default), HTTP, HTTP with CORS
+- Falls back to environment variables and config defaults
 
 ## [1.2.1] - Previous Release
 
@@ -77,12 +91,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Phase 1: Add Dependencies
 - ✅ Phase 2: Update Configuration
 - ✅ Phase 3: Update Server Implementation
+- ✅ Phase 4: Update Entry Point
 
 ### In Progress
-- 🔄 Phase 4: Update Entry Point
+- 🔄 Phase 5: Documentation Updates
 
 ### Planned
-- ⏳ Phase 5: Documentation Updates
 - ⏳ Phase 6: Testing
 - ⏳ Phase 7: Docker Support (Optional)
 
@@ -93,8 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### For Existing Users
 No action required. The server continues to work with STDIO transport by default. All HTTP-related features are opt-in and disabled by default.
 
-### To Enable HTTP Transport (When Available)
-Once Phase 4 is complete, you'll be able to run the server with HTTP transport:
+### To Enable HTTP Transport
+HTTP transport is now available! Run the server with:
 
 ```bash
 python -m zettelkasten_mcp --transport http --port 8000

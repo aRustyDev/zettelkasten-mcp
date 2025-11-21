@@ -624,13 +624,14 @@ class ZettelkastenMcpServer:
         enable_cors = enable_cors if enable_cors is not None else config.http_cors_enabled
 
         if transport == "http":
+            # Import here to avoid dependency issues if not using HTTP
+            import uvicorn
+
             if enable_cors:
-                # Import here to avoid dependency issues if not using HTTP
                 from starlette.middleware.cors import CORSMiddleware
-                import uvicorn
 
                 app = CORSMiddleware(
-                    self.mcp.streamable_http_app(),
+                    self.mcp.sse_app(),
                     allow_origins=config.http_cors_origins,
                     allow_methods=["GET", "POST", "OPTIONS"],
                     allow_headers=["*"],
@@ -641,7 +642,7 @@ class ZettelkastenMcpServer:
                 uvicorn.run(app, host=host, port=port)
             else:
                 logger.info(f"Starting HTTP server on {host}:{port}")
-                self.mcp.run(transport="streamable-http", host=host, port=port)
+                uvicorn.run(self.mcp.sse_app(), host=host, port=port)
         else:
             # Default STDIO transport
             logger.info("Starting STDIO server")
