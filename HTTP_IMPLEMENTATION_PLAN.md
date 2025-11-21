@@ -33,6 +33,7 @@ This plan outlines the steps to add HTTP transport support to the zettelkasten-m
 ### ✅ Phase 2: Update Configuration - COMPLETED
 - **Date:** 2025-11-20
 - **Status:** All configuration updates completed and verified
+- **Git Commit:** 912dc36 - "feat: Add HTTP transport configuration"
 - **Changes:**
   - Added HTTP configuration fields to `ZettelkastenConfig` in config.py:
     - `http_host` (default: 0.0.0.0)
