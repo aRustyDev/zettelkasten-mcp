@@ -1,0 +1,17 @@
+- after finishing a set work defined in a plan, always do the following
+    - first, update the plan to reflect your progress
+    - second, update the CHANGELOG.md to include the work just done
+    - third, create a commit for the last phase
+    - fourth, review the plan before continuing to the next phase
+- all functions must be documented with a docstring
+- all functions must have unit tests
+- all mcp_tools must have integration tests
+- all features must be documented
+    - `./docs/project-knowledge/dev/` contains
+        - implementation details
+        - ADRs
+        - possible future work and feature gaps
+    - `./docs/project-knowledge/user/` contains
+        - usage details
+        - configuration examples
+        - limitations and considerations
