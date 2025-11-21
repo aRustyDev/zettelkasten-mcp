@@ -222,7 +222,7 @@ This plan outlines the steps to add HTTP transport support to the zettelkasten-m
 ### ✅ Phase 12: Health Check Endpoint - COMPLETED
 - **Date:** 2025-11-21
 - **Status:** Successfully implemented health check endpoint
-- **Git Commit:** (to be added)
+- **Git Commit:** d9eb1b5
 - **Objective:** Implement basic health check endpoint for Docker/Kubernetes monitoring
 - **Issue:** Docker healthcheck references `/health` endpoint that doesn't exist
 - **Deliverables:** Health endpoint + tests + updated docs + verified Docker health checks
