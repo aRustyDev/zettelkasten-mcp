@@ -134,7 +134,7 @@ This plan outlines the steps to add HTTP transport support to the zettelkasten-m
 ### ✅ Phase 7: Docker Support - COMPLETED
 - **Date:** 2025-11-21
 - **Status:** Docker deployment support fully implemented
-- **Git Commit:** (to be added after commit)
+- **Git Commit:** 39d3090 - "feat: Add Docker deployment support for HTTP transport"
 - **Changes:**
   - Created `docker/Dockerfile.http` for HTTP transport containerization
     - Based on Python 3.12-slim for security and size optimization
