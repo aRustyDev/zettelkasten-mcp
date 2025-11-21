@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All changes are backward compatible
 
 #### Phase 4: Entry Point (Completed 2025-11-20)
+- Commit: f657484
 - Added CLI argument parsing for transport selection
 - Users can now run: `python -m zettelkasten_mcp --transport http --port 8000`
 - Comprehensive help text with examples for all transport modes

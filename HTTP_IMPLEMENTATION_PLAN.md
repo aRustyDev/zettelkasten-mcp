@@ -67,6 +67,7 @@ This plan outlines the steps to add HTTP transport support to the zettelkasten-m
 ### ✅ Phase 4: Update Entry Point - COMPLETED
 - **Date:** 2025-11-20
 - **Status:** Entry point updated with CLI argument support
+- **Git Commit:** f657484 - "feat: Add CLI arguments for HTTP transport selection"
 - **Changes:**
   - Updated `parse_args()` in main.py:
     - Added comprehensive help text with usage examples
