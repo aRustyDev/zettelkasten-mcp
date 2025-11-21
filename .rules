@@ -15,3 +15,10 @@
         - usage details
         - configuration examples
         - limitations and considerations
+- plan documents go in the `.ai/plans/` directory
+- When a phase of a plan is complete
+  - Move the phase content to `.ai/plans/completed/<plan_name>.phase-<phase_number>.md`
+  - Update the INDEX.md to reflect the completed phase
+- the project INDEX is located at `.ai/INDEX.md`
+- When new work is started, determine if the work should extend an existing plan or start a new one
+- linter configs in root or `.ci/configs/` when tool supports it
