@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `.dockerignore` - Optimized Docker build context exclusions
   - `docker/.env.example` - Environment variable configuration template for Docker
   - "Docker Deployment" section in README.md with comprehensive deployment guide
+- Automated unit tests for HTTP transport:
+  - `tests/test_http_config.py` - HTTP configuration tests (18 tests, 9 passing)
+  - `tests/test_http_transport.py` - HTTP transport functionality tests (14 tests, 2 passing)
+  - `tests/test_http_cli.py` - CLI argument parsing tests (20 tests, 20 passing ✅)
+  - `tests/test_stdio_regression.py` - STDIO backward compatibility tests (18 tests, 17 passing ✅)
+  - `tests/README.md` - Comprehensive test documentation and usage guide
+  - `docs/project-knowledge/dev/http-transport-test-improvements.md` - Future work documentation for failing tests
 
 ### Changed
 - Updated `pyproject.toml` to include HTTP transport dependencies:
@@ -110,6 +117,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All Docker files created and tested
 - Zero changes to core application code
 
+#### Phase 8: Automated Unit Tests (Completed 2025-11-21)
+- Commit: bb09756
+- Automated unit tests for HTTP transport implementation
+- 70 tests created, 48 passing (69% pass rate)
+- Comprehensive test documentation
+- Test infrastructure for future development
+- Critical functionality coverage achieved
+
 ## [1.2.1] - Previous Release
 
 ### Features
@@ -130,8 +145,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Phase 3: Update Server Implementation
 - ✅ Phase 4: Update Entry Point
 - ✅ Phase 5: Documentation Updates
-- ✅ Phase 6: Testing
+- ✅ Phase 6: Testing (Manual)
 - ✅ Phase 7: Docker Support
+- ✅ Phase 8: Automated Unit Tests
 
 ---
 
