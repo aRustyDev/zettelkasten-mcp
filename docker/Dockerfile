@@ -1,4 +1,16 @@
-FROM python:3.12-slim
+FROM python:3.12-slim as repo
+
+SHELL ["/bin/bash", "-c"]
+
+ARG REPO=aRustyDev/zettelkasten-mcp
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+RUN git clone https://github.com/$REPO.git /app
+
+FROM python:3.12-slim as app
 
 SHELL ["/bin/bash", "-c"]
 
@@ -36,8 +48,8 @@ RUN pip install --no-cache-dir uv
 WORKDIR /app
 
 # Copy project files
-COPY pyproject.toml uv.lock README.md ./
-COPY src/ ./src/
+COPY --from=repo /app/pyproject.toml /app/uv.lock /app/README.md ./
+COPY --from=repo /app/src/ /app/src/
 
 # Create virtual environment and install dependencies
 RUN uv venv && \

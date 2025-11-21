@@ -2,10 +2,7 @@
 # Docker Compose configuration for Zettelkasten MCP with HTTP transport
 services:
   zettelkasten:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.http
-    image: zettelkasten-mcp:http
+    image: aRustyDev/zettelkasten-mcp:http
     container_name: zettelkasten-mcp-http
     ports:
       - "${ZETTELKASTEN_HTTP_PORT:-8000}:8000"
@@ -29,7 +26,13 @@ services:
       - ZETTELKASTEN_LOG_LEVEL=${ZETTELKASTEN_LOG_LEVEL:-INFO}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()",
+        ]
       interval: 30s
       timeout: 3s
       retries: 3
