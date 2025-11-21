@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `http_cors_origins` - Allowed CORS origins (default: ["*"])
   - `json_response` - Enable JSON response mode for FastMCP (default: true)
 - Updated `.env.example` with HTTP configuration examples
+- Updated `server/mcp_server.py` to support HTTP transport:
+  - Modified FastMCP initialization to enable JSON response mode
+  - Updated `run()` method to accept transport, host, port, and CORS parameters
+  - Implemented HTTP transport using FastMCP's streamable-http
+  - Added optional CORS middleware support for browser-based clients
+  - Lazy imports of HTTP dependencies (only loaded when needed)
+  - Added detailed logging for transport modes
+  - Maintained backward compatibility with STDIO transport
 
 ### Technical Details
 
@@ -37,10 +45,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backward compatible with existing STDIO transport
 
 #### Phase 2: Configuration (Completed 2025-11-20)
+- Commit: 912dc36
 - Added Pydantic configuration fields for HTTP transport
 - All configuration values use environment variables with sensible defaults
 - Verified configuration loading and environment variable overrides
 - Server continues to work with existing STDIO functionality
+
+#### Phase 3: Server Implementation (Completed 2025-11-20)
+- Updated MCP server to support both STDIO and HTTP transports
+- HTTP transport uses FastMCP's built-in streamable-http with SSE
+- Optional CORS middleware for browser clients
+- Lazy loading of HTTP dependencies (starlette/uvicorn)
+- Default behavior unchanged - STDIO transport remains the default
+- All changes are backward compatible
 
 ## [1.2.1] - Previous Release
 
@@ -59,12 +76,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Completed Phases
 - ✅ Phase 1: Add Dependencies
 - ✅ Phase 2: Update Configuration
+- ✅ Phase 3: Update Server Implementation
 
 ### In Progress
-- 🔄 Phase 3: Update Server Implementation
+- 🔄 Phase 4: Update Entry Point
 
 ### Planned
-- ⏳ Phase 4: Update Entry Point
 - ⏳ Phase 5: Documentation Updates
 - ⏳ Phase 6: Testing
 - ⏳ Phase 7: Docker Support (Optional)
@@ -77,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No action required. The server continues to work with STDIO transport by default. All HTTP-related features are opt-in and disabled by default.
 
 ### To Enable HTTP Transport (When Available)
-Once Phase 3-4 are complete, you'll be able to run the server with HTTP transport:
+Once Phase 4 is complete, you'll be able to run the server with HTTP transport:
 
 ```bash
 python -m zettelkasten_mcp --transport http --port 8000

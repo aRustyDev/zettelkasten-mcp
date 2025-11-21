@@ -18,7 +18,8 @@ class ZettelkastenMcpServer:
         """Initialize the MCP server."""
         self.mcp = FastMCP(
             config.server_name,
-            version=config.server_version
+            version=config.server_version,
+            json_response=config.json_response,
         )
         # Services
         self.zettel_service = ZettelService()
@@ -602,6 +603,46 @@ class ZettelkastenMcpServer:
         # Currently, we don't define prompts for the Zettelkasten server
         pass
 
-    def run(self) -> None:
-        """Run the MCP server."""
-        self.mcp.run()
+    def run(
+        self,
+        transport: str = "stdio",
+        host: str | None = None,
+        port: int | None = None,
+        enable_cors: bool | None = None,
+    ) -> None:
+        """Run the MCP server.
+
+        Args:
+            transport: Transport type - "stdio" or "http"
+            host: Host to bind to (for HTTP transport)
+            port: Port to bind to (for HTTP transport)
+            enable_cors: Enable CORS middleware (for HTTP transport)
+        """
+        # Use config defaults if not provided
+        host = host or config.http_host
+        port = port or config.http_port
+        enable_cors = enable_cors if enable_cors is not None else config.http_cors_enabled
+
+        if transport == "http":
+            if enable_cors:
+                # Import here to avoid dependency issues if not using HTTP
+                from starlette.middleware.cors import CORSMiddleware
+                import uvicorn
+
+                app = CORSMiddleware(
+                    self.mcp.streamable_http_app(),
+                    allow_origins=config.http_cors_origins,
+                    allow_methods=["GET", "POST", "OPTIONS"],
+                    allow_headers=["*"],
+                    expose_headers=["Mcp-Session-Id"],
+                )
+
+                logger.info(f"Starting HTTP server on {host}:{port} with CORS enabled")
+                uvicorn.run(app, host=host, port=port)
+            else:
+                logger.info(f"Starting HTTP server on {host}:{port}")
+                self.mcp.run(transport="streamable-http", host=host, port=port)
+        else:
+            # Default STDIO transport
+            logger.info("Starting STDIO server")
+            self.mcp.run()
