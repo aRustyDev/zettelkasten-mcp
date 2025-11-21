@@ -89,6 +89,7 @@ This plan outlines the steps to add HTTP transport support to the zettelkasten-m
 ### ✅ Phase 5: Documentation Updates - COMPLETED
 - **Date:** 2025-11-21
 - **Status:** README updated with comprehensive transport documentation
+- **Git Commit:** abc52f5 - "docs: Add comprehensive HTTP transport documentation"
 - **Changes:**
   - Added "Transport Options" section to README.md:
     - STDIO Transport subsection with usage examples and Claude Desktop config

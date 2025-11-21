@@ -75,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Falls back to environment variables and config defaults
 
 #### Phase 5: Documentation (Completed 2025-11-21)
+- Commit: abc52f5
 - Added comprehensive "Transport Options" section to README
 - Documented both STDIO and HTTP transports with usage examples
 - Added security considerations for HTTP transport
