@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `pyproject.toml` to include HTTP transport dependencies:
   - Added `starlette>=0.27.0` (v0.46.1 installed)
   - Added `uvicorn>=0.23.0` (v0.34.0 installed)
+- Improved `docker/Dockerfile.http` to use environment variables:
+  - Changed EXPOSE to use `$ZETTELKASTEN_HTTP_PORT` instead of hardcoded 8000
+  - Updated HEALTHCHECK to use `$ZETTELKASTEN_HTTP_PORT` for flexible port configuration
+  - Updated CMD to use `$ZETTELKASTEN_HTTP_HOST` and `$ZETTELKASTEN_HTTP_PORT`
+  - Allows Docker deployments to customize port without rebuilding image
 - Updated `config.py` with HTTP transport configuration fields:
   - `http_host` - Host address for HTTP server (default: 0.0.0.0)
   - `http_port` - Port for HTTP server (default: 8000)
