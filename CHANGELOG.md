@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- HTTP transport support for the MCP server (in progress)
+- HTTP transport support for the MCP server
   - Added starlette and uvicorn dependencies for HTTP/SSE transport
   - Added HTTP configuration options to support both STDIO and HTTP transports
   - Configuration options for HTTP host, port, CORS, and JSON response mode
@@ -68,11 +68,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Phase 4: Entry Point (Completed 2025-11-20)
 - Commit: f657484
 - Added CLI argument parsing for transport selection
-- Users can now run: `python -m zettelkasten_mcp --transport http --port 8000`
+- Users can now run: `python -m zettelkasten_mcp.main --transport http --port 8000`
 - Comprehensive help text with examples for all transport modes
 - Fixed HTTP transport implementation to use correct FastMCP SSE API
 - Verified all transport modes: STDIO (default), HTTP, HTTP with CORS
 - Falls back to environment variables and config defaults
+
+#### Phase 5: Documentation (Completed 2025-11-21)
+- Added comprehensive "Transport Options" section to README
+- Documented both STDIO and HTTP transports with usage examples
+- Added security considerations for HTTP transport
+- Added Claude Desktop and Claude Code CLI configuration examples
+- Updated all command examples throughout README
+- Added command-line options reference
+- Clarified Server-Sent Events usage without over-emphasizing implementation details
 
 ## [1.2.1] - Previous Release
 
@@ -93,9 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Phase 2: Update Configuration
 - ✅ Phase 3: Update Server Implementation
 - ✅ Phase 4: Update Entry Point
-
-### In Progress
-- 🔄 Phase 5: Documentation Updates
+- ✅ Phase 5: Documentation Updates
 
 ### Planned
 - ⏳ Phase 6: Testing

@@ -86,7 +86,21 @@ This plan outlines the steps to add HTTP transport support to the zettelkasten-m
     - HTTP with CORS enabled ✓
     - Environment variable overrides ✓
 
-### ⏳ Phase 5: Documentation Updates - PENDING
+### ✅ Phase 5: Documentation Updates - COMPLETED
+- **Date:** 2025-11-21
+- **Status:** README updated with comprehensive transport documentation
+- **Changes:**
+  - Added "Transport Options" section to README.md:
+    - STDIO Transport subsection with usage examples and Claude Desktop config
+    - HTTP Transport subsection with usage examples and security warnings
+    - Clear explanation of when to use each transport
+  - Added "Command-Line Options" subsection to Usage section
+  - Updated all command examples to use correct module path (zettelkasten_mcp.main)
+  - Added security considerations for HTTP transport
+  - Added environment variable configuration examples
+  - Added Claude Code CLI integration instructions
+  - Mentioned Server-Sent Events once for technical accuracy without emphasis
+  - Verified all documented commands work correctly
 
 ### ⏳ Phase 6: Testing - PENDING
 

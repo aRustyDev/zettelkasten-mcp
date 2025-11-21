@@ -140,42 +140,150 @@ cp .env.example .env
 
 Then edit the file to configure your connection parameters.
 
-## Usage
+## Transport Options
 
-### Starting the Server
+The Zettelkasten MCP server supports two transport mechanisms for different use cases:
+
+### STDIO Transport (Default)
+
+STDIO (Standard Input/Output) transport is the default mode, designed for local MCP clients like Claude Desktop. The server communicates through standard input and output streams, making it ideal for:
+
+- **Claude Desktop integration**: Direct integration with Claude Desktop application
+- **Local development**: Running the server on your local machine
+- **Simple setup**: No network configuration required
+- **Security**: No network exposure, everything runs locally
+
+**Usage:**
 
 ```bash
+# Run with default STDIO transport
 python -m zettelkasten_mcp.main
 ```
 
-Or with explicit configuration:
+**Claude Desktop Configuration:**
 
-```bash
-python -m zettelkasten_mcp.main --notes-dir ./data/notes --database-path ./data/db/zettelkasten.db
-```
-
-### Connecting to Claude Desktop
-
-Add the following configuration to your Claude Desktop:
+Add this to your Claude Desktop config file:
 
 ```json
 {
   "mcpServers": {
     "zettelkasten": {
       "command": "/absolute/path/to/zettelkasten-mcp/.venv/bin/python",
-      "args": [
-        "-m",
-        "zettelkasten_mcp.main"
-      ],
+      "args": ["-m", "zettelkasten_mcp.main"],
       "env": {
-        "ZETTELKASTEN_NOTES_DIR": "/absolute/path/to/zettelkasten-mcp/data/notes",
-        "ZETTELKASTEN_DATABASE_PATH": "/absolute/path/to/zettelkasten-mcp/data/db/zettelkasten.db",
-        "ZETTELKASTEN_LOG_LEVEL": "INFO"
+        "ZETTELKASTEN_NOTES_DIR": "/absolute/path/to/data/notes",
+        "ZETTELKASTEN_DATABASE_PATH": "/absolute/path/to/data/db/zettelkasten.db"
       }
     }
   }
 }
 ```
+
+### HTTP Transport
+
+HTTP transport (using Server-Sent Events) enables remote access to the MCP server. This is useful for:
+
+- **Remote access**: Connect to the server from different machines
+- **Browser-based clients**: Use web-based MCP clients
+- **Development**: Testing with tools like Claude Code CLI
+- **Team collaboration**: Share a single server instance (with appropriate security measures)
+
+**Basic Usage:**
+
+```bash
+# Start HTTP server on default port (8000)
+python -m zettelkasten_mcp.main --transport http
+
+# Start on custom port
+python -m zettelkasten_mcp.main --transport http --port 9000
+
+# Start with custom host and port
+python -m zettelkasten_mcp.main --transport http --host 0.0.0.0 --port 8080
+```
+
+**With CORS (for browser-based clients):**
+
+```bash
+# Enable CORS for browser access
+python -m zettelkasten_mcp.main --transport http --cors
+
+# Or via environment variable
+export ZETTELKASTEN_HTTP_CORS=true
+python -m zettelkasten_mcp.main --transport http
+```
+
+**Claude Code CLI Configuration:**
+
+```bash
+# Add HTTP server to Claude Code
+claude mcp add --transport http zettelkasten http://localhost:8000/mcp
+```
+
+**Environment Variables:**
+
+```bash
+# HTTP server configuration
+export ZETTELKASTEN_HTTP_HOST=0.0.0.0
+export ZETTELKASTEN_HTTP_PORT=8000
+export ZETTELKASTEN_HTTP_CORS=true
+export ZETTELKASTEN_HTTP_CORS_ORIGINS="https://example.com,https://app.example.com"
+
+# Run with environment configuration
+python -m zettelkasten_mcp.main --transport http
+```
+
+**Security Considerations:**
+
+⚠️ **Important**: When running HTTP transport:
+- The server has no built-in authentication - use a reverse proxy (nginx, Apache) for production
+- Enable CORS only when necessary and specify allowed origins
+- Consider using HTTPS via a reverse proxy for encrypted connections
+- Restrict network access using firewalls when appropriate
+- The HTTP transport is best suited for development or trusted network environments
+
+## Usage
+
+### Command-Line Options
+
+```bash
+python -m zettelkasten_mcp.main --help
+```
+
+**Available arguments:**
+
+- `--transport {stdio,http}`: Transport type (default: stdio)
+- `--host HOST`: HTTP server host (default: 0.0.0.0)
+- `--port PORT`: HTTP server port (default: 8000)
+- `--cors`: Enable CORS for HTTP transport
+- `--notes-dir DIR`: Directory for note storage
+- `--database-path PATH`: SQLite database file path
+- `--log-level LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
+### Starting the Server
+
+**STDIO mode (default, for Claude Desktop):**
+
+```bash
+python -m zettelkasten_mcp.main
+```
+
+**HTTP mode (for remote access):**
+
+```bash
+python -m zettelkasten_mcp.main --transport http --port 8000
+```
+
+**With explicit configuration:**
+
+```bash
+python -m zettelkasten_mcp.main \
+  --transport stdio \
+  --notes-dir ./data/notes \
+  --database-path ./data/db/zettelkasten.db \
+  --log-level INFO
+```
+
+See the [Transport Options](#transport-options) section above for detailed configuration instructions for both STDIO and HTTP transports.
 
 ## Available MCP Tools
 
