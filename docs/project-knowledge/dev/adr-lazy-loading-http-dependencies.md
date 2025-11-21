@@ -1,3 +1,10 @@
+---
+id: E04198C7-9EF8-4EBB-943C-08B397C2BEB0
+title: ADR: Lazy Loading HTTP Dependencies
+status: ✅ Accepted
+date: 2025-11-21
+author: aRustyDev
+---
 # ADR: Lazy Loading HTTP Dependencies
 
 ## Status

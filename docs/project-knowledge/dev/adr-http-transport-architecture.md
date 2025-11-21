@@ -1,3 +1,10 @@
+---
+id: 9282B346-B74A-4522-B79C-690705DC1C92
+title: ADR: HTTP Transport Architecture
+status: ✅ Accepted
+date: 2025-11-21
+author: aRustyDev
+---
 # ADR: HTTP Transport Architecture
 
 ## Status

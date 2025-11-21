@@ -22,3 +22,18 @@
 - the project INDEX is located at `.ai/INDEX.md`
 - When new work is started, determine if the work should extend an existing plan or start a new one
 - linter configs in root or `.ci/configs/` when tool supports it
+- all markdown documents must have YAML frontmatter
+    - required fields: id, title, status, date, author
+    - id format: UUID v4 (uppercase with hyphens)
+    - status format: emoji prefix + status text (e.g., "✅ Completed")
+    - date format: YYYY-MM-DD
+    - optional fields: related (array of UUIDs), children (array of UUIDs)
+    - see docs/project-knowledge/dev/adr-frontmatter-standard.md for complete specification
+- when creating new markdown documents
+    - generate UUID with `uuidgen` or `.ai/scripts/generate-uuid.sh`
+    - add frontmatter block at top of file
+    - link to related documents via `related` field (bidirectional)
+    - if document has child documents, list in `children` field
+- when referencing documents
+    - prefer UUID-based references over file paths
+    - maintain bidirectional links (if A relates to B, B should relate to A)

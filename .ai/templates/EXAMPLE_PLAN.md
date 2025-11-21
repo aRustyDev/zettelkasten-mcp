@@ -1,3 +1,15 @@
+---
+id: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX  # Generate with: uuidgen
+title: [Plan Name] Implementation Plan
+status: ⏳ In Progress  # Or: ✅ Completed, 📝 Draft, 🗄️ Archived
+date: YYYY-MM-DD
+author: Your-GitHub-Username
+related:  # Optional: UUIDs of related documents (ADRs, guides, etc.)
+  - YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY  # Example: Related ADR
+children:  # Optional: UUIDs of child documents (archived phases, sub-plans)
+  - ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ  # Example: Phase 1 archived
+---
+
 # [Plan Name] Implementation Plan
 
 **Created:** YYYY-MM-DD

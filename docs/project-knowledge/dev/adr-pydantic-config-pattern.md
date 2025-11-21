@@ -1,3 +1,10 @@
+---
+id: 3BB61AE2-803D-4FED-BB6F-2379E356102F
+title: ADR: Pydantic Configuration with Environment Variables
+status: ✅ Accepted
+date: 2025-11-21
+author: aRustyDev
+---
 # ADR: Pydantic Configuration with Environment Variables
 
 ## Status

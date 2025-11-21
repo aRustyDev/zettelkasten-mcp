@@ -1,3 +1,10 @@
+---
+id: 9B7BB6E1-A27A-4BB6-BBD6-C26FD24529A1
+title: ADR: Plan Archival Strategy for Token Efficiency
+status: ✅ Accepted
+date: 2025-11-21
+author: aRustyDev
+---
 # ADR: Plan Archival Strategy for Token Efficiency
 
 **Status:** Accepted
