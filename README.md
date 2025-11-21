@@ -241,6 +241,131 @@ python -m zettelkasten_mcp.main --transport http
 - Restrict network access using firewalls when appropriate
 - The HTTP transport is best suited for development or trusted network environments
 
+## Docker Deployment
+
+For containerized deployments with HTTP transport, Docker support is available:
+
+### Quick Start with Docker Compose
+
+```bash
+# Clone the repository
+git clone https://github.com/entanglr/zettelkasten-mcp.git
+cd zettelkasten-mcp
+
+# Start the HTTP server
+docker-compose -f docker/docker-compose.http.yml up -d
+
+# The server will be available at http://localhost:8000
+```
+
+### Docker Compose Configuration
+
+The docker-compose setup provides:
+- Automatic container management
+- Persistent data volumes for notes and database
+- Health checks for reliability
+- Easy configuration via environment variables
+
+**Basic deployment:**
+```bash
+# Start in foreground (see logs)
+docker-compose -f docker/docker-compose.http.yml up
+
+# Start in background (detached mode)
+docker-compose -f docker/docker-compose.http.yml up -d
+
+# View logs
+docker-compose -f docker/docker-compose.http.yml logs -f
+
+# Stop the server
+docker-compose -f docker/docker-compose.http.yml down
+```
+
+**Custom configuration:**
+
+Create a `.env` file in the `docker/` directory:
+```bash
+# Copy the example
+cp docker/.env.example docker/.env
+
+# Edit with your settings
+ZETTELKASTEN_HTTP_PORT=9000
+ZETTELKASTEN_HTTP_CORS=true
+ZETTELKASTEN_LOG_LEVEL=DEBUG
+```
+
+Then start the server:
+```bash
+docker-compose -f docker/docker-compose.http.yml up
+```
+
+### Building the Docker Image
+
+To build the HTTP transport Docker image manually:
+
+```bash
+# Build the image
+docker build -f docker/Dockerfile.http -t zettelkasten-mcp:http .
+
+# Run the container
+docker run -d \
+  -p 8000:8000 \
+  -v ./data/notes:/var/data/notes \
+  -v ./data/db:/var/data/db \
+  -e ZETTELKASTEN_HTTP_CORS=true \
+  --name zettelkasten-mcp \
+  zettelkasten-mcp:http
+```
+
+### Docker Environment Variables
+
+All configuration can be controlled via environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ZETTELKASTEN_NOTES_DIR` | `/var/data/notes` | Directory for note storage |
+| `ZETTELKASTEN_DATABASE_PATH` | `/var/data/db/zettelkasten.db` | SQLite database path |
+| `ZETTELKASTEN_HTTP_HOST` | `0.0.0.0` | HTTP server bind address |
+| `ZETTELKASTEN_HTTP_PORT` | `8000` | HTTP server port |
+| `ZETTELKASTEN_HTTP_CORS` | `false` | Enable CORS |
+| `ZETTELKASTEN_HTTP_CORS_ORIGINS` | `*` | Allowed CORS origins |
+| `ZETTELKASTEN_LOG_LEVEL` | `INFO` | Logging level |
+
+### Production Deployment
+
+For production deployments, consider:
+
+1. **Use a reverse proxy** (nginx, Traefik, Caddy) for:
+   - HTTPS/TLS termination
+   - Authentication
+   - Rate limiting
+   - Request logging
+
+2. **Data persistence**: Mount volumes to ensure data survives container restarts:
+   ```yaml
+   volumes:
+     - /path/to/persistent/notes:/var/data/notes
+     - /path/to/persistent/db:/var/data/db
+   ```
+
+3. **Resource limits**: Set memory and CPU limits in docker-compose.yml:
+   ```yaml
+   deploy:
+     resources:
+       limits:
+         cpus: '1.0'
+         memory: 512M
+   ```
+
+4. **Monitoring**: Use health checks and monitoring tools:
+   ```bash
+   # Check container health
+   docker ps
+
+   # View resource usage
+   docker stats zettelkasten-mcp-http
+   ```
+
 ## Usage
 
 ### Command-Line Options

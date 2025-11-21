@@ -1,0 +1,51 @@
+---
+# Docker Compose configuration for Zettelkasten MCP with HTTP transport
+services:
+  zettelkasten:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.http
+    image: zettelkasten-mcp:http
+    container_name: zettelkasten-mcp-http
+    ports:
+      - "${ZETTELKASTEN_HTTP_PORT:-8000}:8000"
+    volumes:
+      # Persistent storage for notes and database
+      - ${ZETTELKASTEN_NOTES_DIR:-./data/notes}:/var/data/notes
+      - ${ZETTELKASTEN_DATABASE_DIR:-./data/db}:/var/data/db
+    environment:
+      # Storage configuration
+      - ZETTELKASTEN_NOTES_DIR=/var/data/notes
+      - ZETTELKASTEN_DATABASE_PATH=/var/data/db/zettelkasten.db
+
+      # HTTP transport configuration
+      - ZETTELKASTEN_HTTP_HOST=0.0.0.0
+      - ZETTELKASTEN_HTTP_PORT=8000
+      - ZETTELKASTEN_HTTP_CORS=${ZETTELKASTEN_HTTP_CORS:-false}
+      - ZETTELKASTEN_HTTP_CORS_ORIGINS=${ZETTELKASTEN_HTTP_CORS_ORIGINS:-*}
+      - ZETTELKASTEN_JSON_RESPONSE=true
+
+      # Logging
+      - ZETTELKASTEN_LOG_LEVEL=${ZETTELKASTEN_LOG_LEVEL:-INFO}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # Optional: nginx reverse proxy for production deployments
+  # Uncomment to add HTTPS, authentication, and other production features
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: zettelkasten-nginx
+  #   ports:
+  #     - "443:443"
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - zettelkasten
+  #   restart: unless-stopped
