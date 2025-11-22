@@ -20,15 +20,15 @@ async def health_check(request):
     return JSONResponse({
         "status": "healthy",
         "service": "zettelkasten-mcp",
-        "transport": "http"
+        "transport": "streamable-http"
     })
 
 
 def create_app_with_health(mcp_app):
-    """Wrap MCP SSE app with health check endpoint.
+    """Wrap MCP HTTP app with health check endpoint.
 
     Args:
-        mcp_app: The MCP SSE ASGI application
+        mcp_app: The MCP HTTP ASGI application
 
     Returns:
         Starlette application with /health endpoint and MCP app mounted at root
@@ -51,6 +51,7 @@ class ZettelkastenMcpServer:
             config.server_name,
             version=config.server_version,
             json_response=config.json_response,
+            stateless_http=True,  # Optimize for Streamable HTTP transport
         )
         # Services
         self.zettel_service = ZettelService()
@@ -658,8 +659,13 @@ class ZettelkastenMcpServer:
             # Import here to avoid dependency issues if not using HTTP
             import uvicorn
 
-            # Get the base MCP SSE app and wrap it with health check endpoint
-            base_app = self.mcp.sse_app()
+            # Get the base MCP Streamable HTTP app and wrap it with health check endpoint
+            base_app = self.mcp.http_app(
+                path=config.streamable_http_path,
+                transport="streamable-http",
+                json_response=config.json_response,
+                stateless_http=config.stateless_http,
+            )
             app = create_app_with_health(base_app)
 
             if enable_cors:
@@ -668,7 +674,7 @@ class ZettelkastenMcpServer:
                 app = CORSMiddleware(
                     app,
                     allow_origins=config.http_cors_origins,
-                    allow_methods=["GET", "POST", "OPTIONS"],
+                    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
                     allow_headers=["*"],
                     expose_headers=["Mcp-Session-Id"],
                 )

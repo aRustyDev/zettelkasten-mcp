@@ -48,6 +48,12 @@ class ZettelkastenConfig(BaseModel):
     json_response: bool = Field(
         default=os.getenv("ZETTELKASTEN_JSON_RESPONSE", "true").lower() == "true"
     )
+    stateless_http: bool = Field(
+        default=os.getenv("ZETTELKASTEN_STATELESS_HTTP", "true").lower() == "true"
+    )
+    streamable_http_path: str = Field(
+        default=os.getenv("ZETTELKASTEN_STREAMABLE_HTTP_PATH", "/mcp")
+    )
     # Date format for ID generation (using ISO format for timestamps)
     id_date_format: str = Field(default="%Y%m%dT%H%M%S")
     # Default note template
