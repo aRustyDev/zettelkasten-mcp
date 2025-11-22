@@ -28,10 +28,13 @@ def create_app_with_health(mcp_app):
     """Wrap MCP HTTP app with health check endpoint.
 
     Args:
-        mcp_app: The MCP HTTP ASGI application
+        mcp_app: The MCP HTTP ASGI application (StarletteWithLifespan)
 
     Returns:
         Starlette application with /health endpoint and MCP app mounted at root
+
+    Note:
+        The mounted MCP app will execute its own lifespan for session initialization.
     """
     from starlette.routing import Route, Mount
     from starlette.applications import Starlette
@@ -48,8 +51,7 @@ class ZettelkastenMcpServer:
     def __init__(self):
         """Initialize the MCP server."""
         self.mcp = FastMCP(
-            config.server_name,
-            version=config.server_version,
+            name=config.server_name,
             json_response=config.json_response,
             stateless_http=True,  # Optimize for Streamable HTTP transport
         )
@@ -658,15 +660,20 @@ class ZettelkastenMcpServer:
         if transport == "http":
             # Import here to avoid dependency issues if not using HTTP
             import uvicorn
+            from starlette.responses import JSONResponse
 
-            # Get the base MCP Streamable HTTP app and wrap it with health check endpoint
-            base_app = self.mcp.http_app(
-                path=config.streamable_http_path,
-                transport="streamable-http",
-                json_response=config.json_response,
-                stateless_http=config.stateless_http,
-            )
-            app = create_app_with_health(base_app)
+            # Add health check route directly to FastMCP to preserve lifespan
+            @self.mcp.custom_route(path="/health", methods=["GET"])
+            async def health_endpoint(request):
+                return JSONResponse({
+                    "status": "healthy",
+                    "service": "zettelkasten-mcp",
+                    "transport": "streamable-http"
+                })
+
+            # Get the Streamable HTTP app (includes health check now)
+            # Configuration (stateless_http, json_response) is set in FastMCP constructor
+            app = self.mcp.streamable_http_app()
 
             if enable_cors:
                 from starlette.middleware.cors import CORSMiddleware

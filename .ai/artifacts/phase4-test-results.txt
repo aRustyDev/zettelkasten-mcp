@@ -1,0 +1,50 @@
+
+    def test_server_initialization_with_default_config(self):
+        """Test that server can be initialized with default configuration."""
+        # This should work the same as before HTTP transport was added
+>       server = ZettelkastenMcpServer()
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_stdio_regression.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <zettelkasten_mcp.server.mcp_server.ZettelkastenMcpServer object at 0x109064ed0>
+
+    def __init__(self):
+        """Initialize the MCP server."""
+>       self.mcp = FastMCP(
+            config.server_name,
+            version=config.server_version,
+            json_response=config.json_response,
+            stateless_http=True,  # Optimize for Streamable HTTP transport
+        )
+E       TypeError: FastMCP.__init__() got an unexpected keyword argument 'version'
+
+src/zettelkasten_mcp/server/mcp_server.py:50: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_health_check.py::TestHealthCheck::test_health_check_endpoint_accessible
+FAILED tests/test_health_check.py::TestHealthCheck::test_health_check_with_cors
+FAILED tests/test_health_check.py::TestHealthCheck::test_http_server_includes_health_endpoint
+FAILED tests/test_semantic_links.py::TestSemanticLinks::test_mcp_get_linked_notes_tool
+FAILED tests/test_semantic_links.py::TestSemanticLinks::test_mcp_create_link_tool
+FAILED tests/test_stdio_regression.py::TestSTDIORegression::test_server_initialization_with_default_config
+ERROR tests/test_http_transport.py::TestHTTPTransport::test_server_initializes_with_json_response
+ERROR tests/test_http_transport.py::TestHTTPTransport::test_stdio_transport_selected_by_default
+ERROR tests/test_http_transport.py::TestHTTPTransport::test_stdio_logging - T...
+ERROR tests/test_integration.py::TestIntegration::test_create_note_flow - Typ...
+ERROR tests/test_integration.py::TestIntegration::test_knowledge_graph_flow
+ERROR tests/test_integration.py::TestIntegration::test_rebuild_index_flow - T...
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_server_initialization_creates_all_services
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_stdio_transport_default_behavior
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_stdio_transport_explicit
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_cors_middleware_not_imported_for_stdio
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_all_mcp_tools_registered
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_no_http_parameters_affect_stdio
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_sse_app_not_called_for_stdio
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_stdio_logging_message
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_zettel_service_initialization
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_search_service_initialization
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_fastmcp_json_response_parameter
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_multiple_stdio_runs_without_http
+ERROR tests/test_stdio_regression.py::TestSTDIORegression::test_backward_compatibility_with_existing_code
+============= 6 failed, 78 passed, 27 skipped, 19 errors in 1.14s ==============

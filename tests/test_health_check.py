@@ -38,7 +38,7 @@ class TestHealthCheck:
         assert response.json() == {
             "status": "healthy",
             "service": "zettelkasten-mcp",
-            "transport": "http"
+            "transport": "streamable-http"
         }
 
     def test_health_check_with_cors(self):
@@ -72,7 +72,7 @@ class TestHealthCheck:
         assert response.json() == {
             "status": "healthy",
             "service": "zettelkasten-mcp",
-            "transport": "http"
+            "transport": "streamable-http"
         }
         # Verify CORS headers are present
         assert "access-control-allow-origin" in response.headers

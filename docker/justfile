@@ -7,7 +7,7 @@ default:
 
 # Build a specific tool (must match dockerfile prefix)
 build tag:
-    @docker build --sbom=true --provenance=true --pull --no-cache --platform linux/amd64,linux/arm64 -t "{{ ghcr }}:{{ tag }}" -t "{{ dckr }}:{{ tag }}" -f "{{ justfile_directory() / "Dockerfile" }}" .
+    @docker build --sbom=true --provenance=true --pull --no-cache --platform linux/amd64,linux/arm64 -t "{{ if tag != "" { ghcr + ":" + tag } else { ghcr } }}" -t "{{ if tag != "" { dckr + ":" + tag } else { dckr } }}" -f "{{ justfile_directory() / "Dockerfile" }}" .
 
 # Publish ALL tools at the most recent tag
 [parallel]
@@ -16,9 +16,9 @@ publish-all: auth
 
 # Publish a specific tool (must match dockerfile prefix)
 [parallel]
-publish tag: (build tag)
-    @docker push "{{ ghcr }}:{{ tag }}"
-    @docker push "{{ dckr }}:{{ tag }}"
+publish tag="": (build tag)
+    @docker push "{{ if tag != "" { ghcr + ":" + tag } else { ghcr } }}"
+    @docker push "{{ if tag != "" { dckr + ":" + tag } else { dckr } }}"
 
 # Authenticate to all Registries
 [parallel]
@@ -27,3 +27,6 @@ auth:
     @echo $(op read op://Developer/ghcr.io/mcp/password) | docker login ghcr.io -u $(op read op://Developer/ghcr.io/mcp/username) --password-stdin
     @docker login -u "$(op read op://Developer/Docker-Hub-MCP/username)" -p "$(op read op://Developer/Docker-Hub-MCP/credential)"
     @rename 's/Dockerfile/dockerfile/g; s/DockerFile/dockerfile/g' -f *
+
+inspect:
+    npx -y @modelcontextprotocol/inspector http://localhost:8000/sse 2>&1 | head -50 &)

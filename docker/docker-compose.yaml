@@ -41,12 +41,21 @@ services:
       retries: 3
       start_period: 5s
     labels:
-      # Simple routing: http://mcp.localhost/sse
+      # Direct SSE routing for MCP
       traefik.enable: true
       traefik.http.services.zettelkasten.loadbalancer.server.port: 8000
-      traefik.http.routers.zettelkasten.rule: Host(`mcp.localhost`) && PathPrefix(`/sse`)
-      traefik.http.routers.zettelkasten.service: zettelkasten
-      traefik.http.routers.zettelkasten.entrypoints: web,websecure
+      # Primary route: /sse endpoint
+      traefik.http.routers.zettelkasten-sse.rule: Host(`mcp.localhost`) && PathPrefix(`/sse`)
+      traefik.http.routers.zettelkasten-sse.service: zettelkasten
+      traefik.http.routers.zettelkasten-sse.entrypoints: web,websecure
+      # Messages endpoint (for MCP session messages)
+      traefik.http.routers.zettelkasten-messages.rule: Host(`mcp.localhost`) && PathPrefix(`/messages`)
+      traefik.http.routers.zettelkasten-messages.service: zettelkasten
+      traefik.http.routers.zettelkasten-messages.entrypoints: web,websecure
+      # Health check endpoint
+      traefik.http.routers.zettelkasten-health.rule: Host(`mcp.localhost`) && Path(`/health`)
+      traefik.http.routers.zettelkasten-health.service: zettelkasten
+      traefik.http.routers.zettelkasten-health.entrypoints: web,websecure
 
   # Optional: nginx reverse proxy for production deployments
   # Uncomment to add HTTPS, authentication, and other production features
