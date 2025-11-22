@@ -2,7 +2,10 @@
 # Docker Compose configuration for Zettelkasten MCP with HTTP transport
 services:
   zettelkasten:
-    image: aRustyDev/zettelkasten-mcp:http
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: zettelkasten-mcp:local
     container_name: zettelkasten-mcp-http
     ports:
       - "${ZETTELKASTEN_HTTP_PORT:-8000}:8000"
@@ -37,6 +40,12 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    labels:
+      traefik.enable: true
+      traefik.http.routers.zettelkasten.rule: Host(`mcp.localhost`)
+      traefik.http.routers.zettelkasten.entrypoints: web
+      traefik.http.routers.zettelkasten.tls: true
+      traefik.http.routers.zettelkasten.tls.certresolver: myresolver
 
   # Optional: nginx reverse proxy for production deployments
   # Uncomment to add HTTPS, authentication, and other production features
@@ -52,3 +61,30 @@ services:
   #   depends_on:
   #     - zettelkasten
   #   restart: unless-stopped
+  # services:
+  ingress:
+    image: traefik:latest
+    container_name: ingress
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
