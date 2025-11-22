@@ -41,11 +41,12 @@ services:
       retries: 3
       start_period: 5s
     labels:
+      # Simple routing: http://mcp.localhost/sse
       traefik.enable: true
-      traefik.http.routers.zettelkasten.rule: Host(`mcp.localhost`)
-      traefik.http.routers.zettelkasten.entrypoints: web
-      traefik.http.routers.zettelkasten.tls: true
-      traefik.http.routers.zettelkasten.tls.certresolver: myresolver
+      traefik.http.services.zettelkasten.loadbalancer.server.port: 8000
+      traefik.http.routers.zettelkasten.rule: Host(`mcp.localhost`) && PathPrefix(`/sse`)
+      traefik.http.routers.zettelkasten.service: zettelkasten
+      traefik.http.routers.zettelkasten.entrypoints: web,websecure
 
   # Optional: nginx reverse proxy for production deployments
   # Uncomment to add HTTPS, authentication, and other production features
@@ -69,11 +70,33 @@ services:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
     ports:
       - "80:80"
+      - "443:443"
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      # Parent Router: /db
+      traefik.http.routers.db.entrypoints: web,websecure
+      traefik.http.routers.db.rule: Host(`mcp.localhost`) && Path(`/db`)
+      traefik.http.routers.db.middlewares: cleaned
+      # Parent Router: /api
+      traefik.http.routers.api.entrypoints: web,websecure
+      traefik.http.routers.api.rule: Host(`mcp.localhost`) && Path(`/api`)
+      traefik.http.routers.api.middlewares: cleaned
+      # Parent Router: /notes
+      traefik.http.routers.notes.entrypoints: web,websecure
+      traefik.http.routers.notes.rule: Host(`mcp.localhost`) && Path(`/notes`)
+      traefik.http.routers.notes.middlewares: cleaned
+      # Parent Router: /think
+      traefik.http.routers.think.entrypoints: web,websecure
+      traefik.http.routers.think.rule: Host(`mcp.localhost`) && Path(`/think`)
+      traefik.http.routers.think.middlewares: cleaned
+      # Middlewares
+      traefik.http.middlewares.cleaned.chain.middlewares: strip-prefix
+      traefik.http.middlewares.strip-prefix.stripprefix.prefixes: /db,/api,/notes,/think
     deploy:
       resources:
         limits:
