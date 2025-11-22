@@ -41,17 +41,13 @@ services:
       retries: 3
       start_period: 5s
     labels:
-      # Direct SSE routing for MCP
+      # Streamable HTTP routing for MCP
       traefik.enable: true
       traefik.http.services.zettelkasten.loadbalancer.server.port: 8000
-      # Primary route: /sse endpoint
-      traefik.http.routers.zettelkasten-sse.rule: Host(`mcp.localhost`) && PathPrefix(`/sse`)
-      traefik.http.routers.zettelkasten-sse.service: zettelkasten
-      traefik.http.routers.zettelkasten-sse.entrypoints: web,websecure
-      # Messages endpoint (for MCP session messages)
-      traefik.http.routers.zettelkasten-messages.rule: Host(`mcp.localhost`) && PathPrefix(`/messages`)
-      traefik.http.routers.zettelkasten-messages.service: zettelkasten
-      traefik.http.routers.zettelkasten-messages.entrypoints: web,websecure
+      # Primary route: /mcp endpoint (Streamable HTTP)
+      traefik.http.routers.zettelkasten-mcp.rule: Host(`mcp.localhost`) && PathPrefix(`/mcp`)
+      traefik.http.routers.zettelkasten-mcp.service: zettelkasten
+      traefik.http.routers.zettelkasten-mcp.entrypoints: web,websecure
       # Health check endpoint
       traefik.http.routers.zettelkasten-health.rule: Host(`mcp.localhost`) && Path(`/health`)
       traefik.http.routers.zettelkasten-health.service: zettelkasten
