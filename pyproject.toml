@@ -17,7 +17,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "mcp[cli]>=1.2.0",
+    "mcp[cli]>=1.22.0",
     "sqlalchemy>=2.0.0",
     "pydantic>=2.0.0",
     "python-frontmatter>=1.0.0",

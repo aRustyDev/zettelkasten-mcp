@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Updated project INDEX.md with new implementation plan
     - Plan: [STREAMABLE_HTTP_IMPLEMENTATION.md](.ai/plans/STREAMABLE_HTTP_IMPLEMENTATION.md)
     - Phase Files: [.ai/plans/phases/](.ai/plans/phases/)
+  - Phase 2: Upgrade Dependencies ✅ Completed (2025-11-22)
+    - Updated `pyproject.toml`: `mcp[cli]>=1.2.0` → `mcp[cli]>=1.22.0`
+    - Successfully upgraded MCP Python SDK: 1.6.0 → 1.22.0
+    - All dependency conflicts resolved (41 packages compatible)
+    - FastMCP imports verified working
+    - New dependencies added: attrs, cffi, cryptography, jsonschema, pyjwt, python-multipart
+    - Key upgrades: pydantic 2.11.1→2.12.4, starlette 0.46.1→0.50.0, uvicorn 0.34.0→0.38.0
 
 ### Added
 - HTTP transport support for the MCP server

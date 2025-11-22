@@ -1,7 +1,7 @@
 ---
 id: 2F7850D8-3E51-456C-AE60-C70BAF323BFB
 title: Streamable HTTP via MCP SDK 1.22.0 Upgrade - Implementation Plan
-status: 🔄 In Progress - Phase 2
+status: 🔄 In Progress - Phase 3
 date: 2025-11-22
 author: aRustyDev
 related:
