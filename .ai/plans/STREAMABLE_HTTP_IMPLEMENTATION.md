@@ -1,20 +1,43 @@
 ---
 id: 2F7850D8-3E51-456C-AE60-C70BAF323BFB
-title: Streamable HTTP Transport Implementation Plan
-status: 📝 Draft
+title: Streamable HTTP via MCP SDK 1.22.0 Upgrade - Implementation Plan
+status: 🔄 In Progress - Phase 2
 date: 2025-11-22
 author: aRustyDev
 related:
   - FF1F3BCB-1328-41E3-9B7C-60946539384A  # Doc: MCP HTTP Transport Protocols
+  - 82D15E44-AA64-4624-AE3E-3C2E5BAC97B3  # Doc: Streamable HTTP Implementation Options
+  - 6E8A9F2C-1D4B-4E5A-9C3E-7F4B2D1A8E6C  # Doc: FastMCP Deep Dive Comparison
   - 9282B346-B74A-4522-B79C-690705DC1C92  # ADR: HTTP Transport Architecture
-  - 15754957-34F7-418C-8E2A-319175C225C3  # Plan: HTTP Implementation (Legacy)
+phases:
+  - 3EC53936-B5CC-425D-804B-ED865033880B  # Phase 1: Preparation & Analysis
+  - 4F557F9D-D5A9-4ACD-88D2-C741353CAC20  # Phase 2: Upgrade Dependencies
+  - F628B564-5D2F-4A64-A658-4FDA04E2256D  # Phase 3: Code Updates for Streamable HTTP
+  - 8D5A8B21-C4A9-449D-A4B4-A1B29087B91B  # Phase 4: Testing & Validation
+  - 30D2EEC2-400A-4EDC-A704-472908C6CAC5  # Phase 5: Docker & Deployment Updates
+  - E27EB7DB-14B0-4505-8B5B-2FCA30DF2A23  # Phase 6: Documentation Updates
 ---
 
-# Streamable HTTP Transport Implementation Plan
+# Streamable HTTP Implementation Plan - Option A
 
-**Created:** 2025-11-22
-**Status:** 📝 Draft - Awaiting Approval
-**Related:** [MCP HTTP Transport Protocols](../../docs/project-knowledge/dev/mcp-http-transport-protocols.md)
+**Strategy:** Upgrade MCP SDK from 1.6.0 → 1.22.0
+**Estimated Time:** 4-6 hours
+**Risk Level:** 🟡 Medium (16 minor version jump)
+**Complexity:** ⭐ Low (minimal code changes)
+
+---
+
+## Executive Summary
+
+This plan implements **Modern Streamable HTTP transport** by upgrading the official MCP Python SDK from version 1.6.0 to 1.22.0. This is the recommended approach because:
+
+✅ **Minimal Changes**: Only dependency upgrade + small config changes
+✅ **Official Support**: Anthropic-backed, long-term stable
+✅ **PR-Friendly**: Best for upstream contribution
+✅ **Low Risk**: FastMCP 1.0 API is stable across versions
+✅ **Fast Implementation**: 4-6 hours total
+
+**Alternative Considered:** FastMCP 2.0 (standalone) - rejected due to higher migration effort and upstream PR concerns. See [fastmcp-deep-dive-comparison.md](../../docs/project-knowledge/dev/fastmcp-deep-dive-comparison.md) for analysis.
 
 ---
 
@@ -22,596 +45,916 @@ related:
 
 ### Current Situation
 
-Our MCP server implements **Legacy HTTP+SSE transport (2024-11-05 spec)** which causes:
-- ❌ Zed editor cannot connect (60-second timeout)
-- ❌ Modern MCP clients fail with 405 errors
-- ⚠️ Deprecated protocol limits future client compatibility
+**Server Configuration:**
+- MCP SDK Version: `1.6.0`
+- Transport: Legacy HTTP+SSE (2024-11-05 spec)
+- Endpoints: `/sse` (GET), `/messages/` (POST)
+
+**Client Compatibility Issues:**
+- ❌ **Zed Editor**: Times out after 60 seconds
+- ❌ **Modern MCP Clients**: Expect POST `/mcp` → 405 error
+- ⚠️ **Deprecated Protocol**: Limits future compatibility
 
 ### Root Cause
 
 **Protocol Version Mismatch:**
-- Server: Legacy HTTP+SSE with `/sse` (GET) and `/messages/` (POST) endpoints
-- Modern Clients (Zed): Expect Streamable HTTP with unified `/mcp` endpoint
-- The 405 error on POST `/sse` is **correct** for Legacy mode but incompatible with Modern clients
+```
+Server:  Legacy HTTP+SSE  → /sse (GET), /messages/ (POST)
+Zed:     Streamable HTTP  → /mcp (POST/GET/DELETE)
+Result:  405 error on POST /sse → timeout
+```
+
+**Why 405 is Correct:**
+The Legacy protocol's `/sse` endpoint only accepts GET requests. When Zed sends POST `/sse`, the server correctly returns 405 Method Not Allowed. This is **not a bug**, it's a **protocol incompatibility**.
 
 **Technical Details:** See [mcp-http-transport-protocols.md](../../docs/project-knowledge/dev/mcp-http-transport-protocols.md)
 
 ---
 
-## Objectives
+## Solution: Upgrade to MCP SDK 1.22.0
 
-### Primary Goal
+### Why This Works
 
-Implement **Modern Streamable HTTP transport (2025-03-26 spec)** to support all MCP clients.
+**MCP SDK 1.8.0** (released May 8, 2025) added Streamable HTTP support:
+- ✅ Implements Modern Streamable HTTP (2025-03-26 spec)
+- ✅ Single `/mcp` endpoint (GET/POST/DELETE)
+- ✅ Session management via `Mcp-Session-Id` header
+- ✅ Backward compatible with STDIO transport
 
-### Success Criteria
+**Current Latest:** 1.22.0 (released November 20, 2025)
+- ✅ Mature implementation (14 versions since Streamable HTTP)
+- ✅ Bug fixes and performance improvements
+- ✅ Full protocol compliance
 
-- ✅ Zed connects successfully via HTTP transport (no timeout)
-- ✅ Modern clients can use POST /mcp → 202 Accepted flow
-- ✅ Backward compatibility with Legacy HTTP+SSE maintained
-- ✅ All existing tests pass
-- ✅ New transport mode documented and tested
-- ✅ Zero breaking changes for STDIO transport
+### Changes Required
 
-### Non-Goals (Out of Scope)
+**Minimal Code Impact:**
+1. Update `pyproject.toml`: `mcp[cli]>=1.22.0`
+2. Add `stateless_http=True` to FastMCP initialization
+3. Change transport string: `"sse"` → `"streamable-http"`
+4. Run tests, rebuild Docker image
 
-- ❌ WebSocket transport
-- ❌ HTTP/2 or HTTP/3 optimization
-- ❌ Deprecating Legacy HTTP+SSE (keep for backward compatibility)
-- ❌ Multi-instance coordination or clustering
-
----
-
-## Technical Approach
-
-### Option 1: Extend FastMCP (Recommended)
-
-**Approach:** Add Streamable HTTP support alongside existing SSE transport.
-
-**Pros:**
-- Maintain FastMCP integration
-- Minimal code changes
-- Easy to upstream contribution
-
-**Cons:**
-- May require forking if upstream doesn't accept PR
-- Need to understand FastMCP internals
-
-### Option 2: Implement Custom Transport
-
-**Approach:** Create standalone Streamable HTTP transport handler.
-
-**Pros:**
-- Full control over implementation
-- Can optimize for our use case
-
-**Cons:**
-- More code to maintain
-- Duplicate session management logic
-- Harder to upgrade FastMCP
-
-### Option 3: Switch MCP SDK
-
-**Approach:** Migrate from FastMCP to official MCP Python SDK with Streamable HTTP support.
-
-**Pros:**
-- Official support
-- Better long-term maintenance
-
-**Cons:**
-- Large refactoring required
-- Breaking API changes
-- Lose FastMCP ergonomics
-
-**Decision:** Start with **Option 1 (Extend FastMCP)** for fastest time-to-value.
+**No Breaking Changes Expected:**
+- FastMCP 1.0 decorator API is stable
+- Same import path: `from mcp.server.fastmcp import FastMCP`
+- Existing tools/resources/prompts unchanged
+- SQLAlchemy service layer unchanged
 
 ---
 
 ## Implementation Phases
 
-### Phase 1: Research & Design
+### Phase 1: Preparation & Analysis (1 hour)
 
-**Goal:** Understand requirements and design the implementation.
+**Objective:** Understand changes between 1.6.0 and 1.22.0, prepare environment
 
-**Tasks:**
-1. Review MCP 2025-03-26 specification in detail
-2. Study reference implementations:
-   - https://github.com/invariantlabs-ai/mcp-streamable-http
-   - https://github.com/ferrants/mcp-streamable-http-python-server
-3. Design session management strategy
-4. Design endpoint routing architecture
-5. Create ADR documenting design decisions
+#### Tasks:
+
+**1.1 Create Feature Branch**
+```bash
+cd /Users/arustydev/repos/mcp/zettelkasten-mcp
+git checkout -b feat/upgrade-mcp-sdk-1.22
+git push -u origin feat/upgrade-mcp-sdk-1.22
+```
+
+**1.2 Review MCP SDK Changelog**
+- Visit: https://github.com/modelcontextprotocol/python-sdk/releases
+- Review breaking changes from v1.6.0 → v1.22.0
+- Document any API changes affecting our codebase
+
+**1.3 Backup Current State**
+```bash
+# Document current behavior
+uv pip list > .ai/artifacts/pre-upgrade-packages.txt
+python -c "from mcp.server.fastmcp import FastMCP; print(FastMCP.__doc__)" > .ai/artifacts/pre-upgrade-fastmcp-api.txt
+
+# Create test baseline
+uv run pytest --verbose > .ai/artifacts/pre-upgrade-test-results.txt 2>&1 || true
+```
+
+**1.4 Document Current Endpoints**
+```bash
+# Start server and document endpoints
+ZETTELKASTEN_HTTP_PORT=9000 uv run python -m zettelkasten_mcp --transport http &
+SERVER_PID=$!
+sleep 3
+
+# Test current endpoints
+curl -v http://localhost:9000/health 2>&1 | tee .ai/artifacts/pre-upgrade-health.txt
+curl -v http://localhost:9000/sse 2>&1 | tee .ai/artifacts/pre-upgrade-sse.txt
+curl -X HEAD http://localhost:9000/mcp 2>&1 | tee .ai/artifacts/pre-upgrade-mcp-404.txt
+
+kill $SERVER_PID
+```
 
 **Deliverables:**
-- [ ] ADR: Streamable HTTP Architecture
-- [ ] Sequence diagrams for request flows
-- [ ] Session management design doc
+- ✅ Feature branch created
+- ✅ Changelog reviewed and documented
+- ✅ Current state backed up
+- ✅ Baseline test results captured
 
-**Estimated Time:** 4 hours
+**Time Estimate:** 1 hour
 
 ---
 
-### Phase 2: Add /mcp Endpoint Infrastructure
+### Phase 2: Upgrade Dependencies (1 hour)
 
-**Goal:** Create the `/mcp` endpoint structure with routing.
+**Objective:** Upgrade MCP SDK to 1.22.0 and resolve dependency conflicts
 
-**Tasks:**
-1. Create `StreamableHttpTransport` class
-2. Add `/mcp` route to Starlette app
-3. Implement request method routing (GET, POST, DELETE)
-4. Add basic health check for `/mcp` endpoint
-5. Add integration tests for endpoint availability
+#### Tasks:
 
-**Files to Create:**
-- `src/zettelkasten_mcp/transports/streamable_http.py`
-- `tests/test_streamable_http_transport.py`
+**2.1 Update pyproject.toml**
 
-**Files to Modify:**
-- `src/zettelkasten_mcp/server/mcp_server.py` (add transport option)
-- `src/zettelkasten_mcp/main.py` (add CLI flag)
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/pyproject.toml`
+
+```diff
+ [project]
+ dependencies = [
+-    "mcp[cli]>=1.2.0",
++    "mcp[cli]>=1.22.0",
+     "sqlalchemy>=2.0.0",
+     "pydantic>=2.0.0",
+     "python-frontmatter>=1.0.0",
+     "markdown>=3.4.0",
+     "python-dotenv>=1.0.0",
+     "starlette>=0.27.0",
+     "uvicorn>=0.23.0",
+ ]
+```
+
+**2.2 Upgrade Dependencies**
+```bash
+cd /Users/arustydev/repos/mcp/zettelkasten-mcp
+
+# Remove old lock file to force fresh resolution
+rm uv.lock
+
+# Sync dependencies
+uv sync
+
+# Verify upgrade
+uv pip show mcp
+# Expected output: Version: 1.22.0 (or latest)
+```
+
+**2.3 Check for Dependency Conflicts**
+```bash
+# List all installed packages
+uv pip list > .ai/artifacts/post-upgrade-packages.txt
+
+# Check for version conflicts
+uv pip check
+
+# Compare with pre-upgrade
+diff .ai/artifacts/pre-upgrade-packages.txt .ai/artifacts/post-upgrade-packages.txt > .ai/artifacts/package-diff.txt
+```
+
+**2.4 Verify Import Still Works**
+```bash
+# Quick smoke test
+uv run python -c "from mcp.server.fastmcp import FastMCP, Context; print('Import successful')"
+```
 
 **Deliverables:**
-- [ ] `/mcp` endpoint responds to GET, POST, DELETE
-- [ ] Proper 405 responses for unsupported methods
-- [ ] Tests for endpoint routing
+- ✅ `pyproject.toml` updated
+- ✅ Dependencies upgraded
+- ✅ No dependency conflicts
+- ✅ Imports still work
 
-**Estimated Time:** 6 hours
+**Time Estimate:** 1 hour
+
+**Rollback Plan:**
+```bash
+# If upgrade fails
+git checkout pyproject.toml uv.lock
+uv sync
+```
 
 ---
 
-### Phase 3: Implement Session Management
+### Phase 3: Code Updates for Streamable HTTP (1-2 hours)
 
-**Goal:** Handle MCP session lifecycle with header-based session IDs.
+**Objective:** Update code to use Streamable HTTP transport
 
-**Tasks:**
-1. Create `SessionManager` class
-2. Implement session creation on first POST
-3. Add `Mcp-Session-Id` header parsing
-4. Implement session storage (in-memory for MVP)
-5. Add session cleanup on DELETE
-6. Add session timeout handling
+#### Tasks:
 
-**Files to Create:**
-- `src/zettelkasten_mcp/transports/session_manager.py`
-- `tests/test_session_manager.py`
+**3.1 Update MCP Server Initialization**
+
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/src/zettelkasten_mcp/server/mcp_server.py`
+
+```diff
+ class ZettelkastenMcpServer:
+     """MCP server for Zettelkasten."""
+     def __init__(self):
+         """Initialize the MCP server."""
+         self.mcp = FastMCP(
+             config.server_name,
+             version=config.server_version,
+             json_response=config.json_response,
++            stateless_http=True,  # Optimize for Streamable HTTP
+         )
+```
+
+**Why `stateless_http=True`?**
+- Recommended for Streamable HTTP deployments
+- Each request gets a new transport instance
+- Better for load balancing and horizontal scaling
+- Matches Zed's expected behavior
+
+**3.2 Update Transport Configuration**
+
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/src/zettelkasten_mcp/config.py`
+
+Check if there are any hardcoded transport strings:
+
+```python
+# Review config.py for any SSE-specific settings
+# May need to add streamable_http_path if customized
+```
+
+**3.3 Update Main Entry Point**
+
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/src/zettelkasten_mcp/__main__.py`
+
+```diff
+ async def main():
+     """Run the MCP server."""
+     mcp_server = ZettelkastenMcpServer()
+
+     if transport == "stdio":
+         await mcp_server.mcp.run_async(transport="stdio")
+     elif transport == "http":
+-        # Legacy HTTP+SSE transport
++        # Modern Streamable HTTP transport
+         from zettelkasten_mcp.server.mcp_server import create_app_with_health
+-        sse_app = mcp_server.mcp.sse_app(
+-            sse_path="/sse",
+-            message_path="/messages/"
++
++        # Create Streamable HTTP app
++        http_app = mcp_server.mcp.http_app(
++            path="/mcp",  # Single unified endpoint
++            transport="streamable-http",
++            json_response=config.json_response,
++            stateless_http=config.stateless_http,
+         )
+-        app = create_app_with_health(sse_app)
++
++        # Wrap with health check
++        app = create_app_with_health(http_app)
++
+         import uvicorn
+         logger.info(f"Starting HTTP server on {config.http_host}:{config.http_port}")
+         uvicorn.run(
+             app,
+             host=config.http_host,
+             port=config.http_port,
+             log_level=config.log_level.lower(),
+         )
+     else:
+         raise ValueError(f"Unknown transport: {transport}")
+```
+
+**3.4 Update Config Class (if needed)**
+
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/src/zettelkasten_mcp/config.py`
+
+Add `stateless_http` configuration:
+
+```python
+class Config(BaseSettings):
+    # ... existing fields ...
+
+    # HTTP Transport Settings
+    http_host: str = "0.0.0.0"
+    http_port: int = 8000
+    stateless_http: bool = True  # NEW: Enable stateless HTTP mode
+    streamable_http_path: str = "/mcp"  # NEW: Streamable HTTP endpoint path
+```
+
+**3.5 Verify Health Check Endpoint**
+
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/src/zettelkasten_mcp/server/mcp_server.py`
+
+Ensure health check stays unchanged:
+
+```python
+async def health_check(request):
+    """Health check endpoint for Docker/Kubernetes monitoring."""
+    from starlette.responses import JSONResponse
+
+    return JSONResponse({
+        "status": "healthy",
+        "service": "zettelkasten-mcp",
+        "transport": "streamable-http"  # UPDATE transport name
+    })
+```
 
 **Deliverables:**
-- [ ] Sessions created and tracked
-- [ ] `Mcp-Session-Id` header validated
-- [ ] DELETE terminates sessions
-- [ ] Tests for session lifecycle
+- ✅ MCP server initialization updated with `stateless_http=True`
+- ✅ Transport method changed from SSE to Streamable HTTP
+- ✅ Main entry point updated to use `http_app()`
+- ✅ Config class updated (if needed)
+- ✅ Health check reflects new transport
 
-**Estimated Time:** 8 hours
+**Time Estimate:** 1-2 hours
 
 ---
 
-### Phase 4: Implement POST /mcp Handler
+### Phase 4: Testing & Validation (2-3 hours)
 
-**Goal:** Handle client-to-server messages with proper queuing.
+**Objective:** Verify all functionality works with Streamable HTTP
 
-**Tasks:**
-1. Parse JSON-RPC from POST body
-2. Implement message queue per session
-3. Return 202 Accepted for queued messages
-4. Add content negotiation (Accept header)
-5. Support immediate JSON response mode
-6. Support SSE initiation from POST
+#### Tasks:
 
-**Files to Modify:**
-- `src/zettelkasten_mcp/transports/streamable_http.py`
+**4.1 Unit Tests**
+```bash
+cd /Users/arustydev/repos/mcp/zettelkasten-mcp
 
-**Deliverables:**
-- [ ] POST /mcp accepts JSON-RPC messages
-- [ ] 202 Accepted returned for queued messages
-- [ ] Content negotiation works correctly
-- [ ] Tests for POST handler
+# Run existing test suite
+uv run pytest --verbose
 
-**Estimated Time:** 10 hours
+# Expected: All tests pass (no breaking changes in FastMCP 1.0 API)
+```
 
----
+**4.2 Manual STDIO Transport Test**
+```bash
+# Verify backward compatibility with STDIO
+uv run python -m zettelkasten_mcp --transport stdio
 
-### Phase 5: Implement GET /mcp Handler
+# In another terminal, test with MCP client
+npx @modelcontextprotocol/inspector python -m zettelkasten_mcp --transport stdio
+```
 
-**Goal:** Establish SSE streams for server-to-client messages.
+Expected: STDIO transport still works (no regression)
 
-**Tasks:**
-1. Implement SSE stream establishment
-2. Integrate with session message queue
-3. Send queued messages as SSE events
-4. Handle client disconnection gracefully
-5. Add connection timeout handling
+**4.3 Start HTTP Server (Streamable HTTP)**
+```bash
+# Start server with new transport
+ZETTELKASTEN_HTTP_PORT=8000 uv run python -m zettelkasten_mcp --transport http
 
-**Files to Modify:**
-- `src/zettelkasten_mcp/transports/streamable_http.py`
+# Should see:
+# INFO: Starting HTTP server on 0.0.0.0:8000
+# INFO: Uvicorn running on http://0.0.0.0:8000
+```
 
-**Deliverables:**
-- [ ] GET /mcp establishes SSE stream
-- [ ] Messages delivered via SSE events
-- [ ] Disconnection handled properly
-- [ ] Tests for GET handler
+**4.4 Test Health Endpoint**
+```bash
+# Health check should still work
+curl http://localhost:8000/health
 
-**Estimated Time:** 8 hours
+# Expected output:
+# {"status":"healthy","service":"zettelkasten-mcp","transport":"streamable-http"}
+```
 
----
+**4.5 Test Streamable HTTP Endpoint**
+```bash
+# Test GET /mcp (should return 200 or upgrade to SSE)
+curl -v http://localhost:8000/mcp
 
-### Phase 6: Implement DELETE /mcp Handler
+# Test POST /mcp (should return 202 Accepted or start SSE)
+curl -v -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"initialize","params":{},"id":1}'
 
-**Goal:** Allow explicit session termination.
+# Expected: 202 Accepted (not 405!)
+```
 
-**Tasks:**
-1. Parse `Mcp-Session-Id` header
-2. Terminate session and cleanup resources
-3. Return 204 No Content on success
-4. Return 404 if session not found
-5. Close any active SSE streams
+**4.6 Test with Zed Editor**
 
-**Files to Modify:**
-- `src/zettelkasten_mcp/transports/streamable_http.py`
+Update Zed MCP config:
 
-**Deliverables:**
-- [ ] DELETE /mcp terminates sessions
-- [ ] 204 No Content returned
-- [ ] Resources cleaned up
-- [ ] Tests for DELETE handler
-
-**Estimated Time:** 4 hours
-
----
-
-### Phase 7: Backward Compatibility
-
-**Goal:** Ensure Legacy HTTP+SSE still works.
-
-**Tasks:**
-1. Keep `/sse` and `/messages/` endpoints active
-2. Run full regression test suite
-3. Test with mcp-remote using Legacy mode
-4. Verify no breaking changes to STDIO transport
-5. Update documentation about transport modes
-
-**Files to Test:**
-- All existing transport-related tests
-- Integration tests with mcp-remote
-
-**Deliverables:**
-- [ ] Legacy HTTP+SSE still functional
-- [ ] All existing tests pass
-- [ ] No regressions in STDIO mode
-- [ ] Documentation updated
-
-**Estimated Time:** 4 hours
-
----
-
-### Phase 8: Configuration & CLI
-
-**Goal:** Make Streamable HTTP configurable.
-
-**Tasks:**
-1. Add `--transport streamable-http` CLI flag
-2. Add environment variables:
-   - `ZETTELKASTEN_MCP_ENDPOINT=/mcp`
-   - `ZETTELKASTEN_STREAMABLE_HTTP=true`
-3. Update config.py with new settings
-4. Add validation for incompatible configs
-5. Update documentation
-
-**Files to Modify:**
-- `src/zettelkasten_mcp/config.py`
-- `src/zettelkasten_mcp/main.py`
-- `README.md`
-
-**Deliverables:**
-- [ ] CLI flag for Streamable HTTP
-- [ ] Environment variable configuration
-- [ ] Config validation
-- [ ] Documentation updated
-
-**Estimated Time:** 4 hours
-
----
-
-### Phase 9: Testing with Zed
-
-**Goal:** Verify Zed can connect successfully.
-
-**Tasks:**
-1. Start server with Streamable HTTP transport
-2. Configure Zed with HTTP transport
-3. Test connection establishment
-4. Test tool invocation
-5. Test resource access
-6. Verify no timeouts or errors
-7. Document Zed configuration
-
-**Zed Config:**
 ```json
 {
   "context_servers": {
     "zettelkasten": {
+      "type": "http",
       "url": "http://localhost:8000/mcp"
     }
   }
 }
 ```
 
-**Deliverables:**
-- [ ] Zed connects without timeout
-- [ ] All MCP operations work
-- [ ] Configuration documented
-- [ ] Troubleshooting guide created
+**Expected Behavior:**
+- ✅ Zed connects successfully (no 60-second timeout)
+- ✅ Tools are listed in Zed's MCP tool palette
+- ✅ Calling a tool returns results
 
-**Estimated Time:** 3 hours
+**4.7 Test with mcp-remote (Backward Compatibility)**
+```bash
+# Test with mcp-remote client
+npx mcp-remote http://localhost:8000/mcp
+
+# Expected: Connection successful, tools listed
+```
+
+**4.8 Verify Legacy Endpoints Return 404**
+```bash
+# Old endpoints should no longer exist
+curl -I http://localhost:8000/sse
+# Expected: 404 Not Found (or redirect to /mcp)
+
+curl -I http://localhost:8000/messages/
+# Expected: 404 Not Found
+```
+
+**4.9 Load Testing (Optional)**
+```bash
+# Simple load test with hey
+hey -n 1000 -c 10 http://localhost:8000/health
+
+# Expected: All requests succeed, reasonable latency
+```
+
+**Deliverables:**
+- ✅ All unit tests pass
+- ✅ STDIO transport still works
+- ✅ HTTP server starts successfully
+- ✅ Health endpoint responds
+- ✅ `/mcp` endpoint accepts POST (no 405!)
+- ✅ Zed connects successfully
+- ✅ mcp-remote works
+- ✅ Legacy endpoints return 404
+
+**Time Estimate:** 2-3 hours
 
 ---
 
-### Phase 10: Docker & Deployment
+### Phase 5: Docker & Deployment Updates (1 hour)
 
-**Goal:** Update Docker deployment for Streamable HTTP.
+**Objective:** Update Docker configuration for Streamable HTTP
 
-**Tasks:**
-1. Update Dockerfile with new environment variables
-2. Update docker-compose.yaml
-3. Add health check for `/mcp` endpoint
-4. Update Traefik routing for `/mcp`
-5. Test deployment end-to-end
+#### Tasks:
 
-**Files to Modify:**
-- `docker/Dockerfile`
-- `docker/docker-compose.yaml`
-- `docs/project-knowledge/user/HTTP_USAGE.md`
+**5.1 Update Dockerfile (if needed)**
+
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/docker/Dockerfile`
+
+Verify CMD is correct:
+
+```dockerfile
+# Should already be correct (no port/host in CMD)
+CMD ["--transport", "http"]
+```
+
+No changes needed (already fixed in previous session).
+
+**5.2 Update docker-compose.yaml Labels**
+
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/docker/docker-compose.yaml`
+
+Update Traefik labels for new endpoint:
+
+```diff
+ labels:
+   traefik.enable: true
+   traefik.http.services.zettelkasten.loadbalancer.server.port: 8000
+
+-  # Old SSE endpoints
+-  traefik.http.routers.zettelkasten-sse.rule: Host(`mcp.localhost`) && PathPrefix(`/sse`)
+-  traefik.http.routers.zettelkasten-messages.rule: Host(`mcp.localhost`) && PathPrefix(`/messages`)
+
++  # Streamable HTTP endpoint
++  traefik.http.routers.zettelkasten-mcp.rule: Host(`mcp.localhost`) && PathPrefix(`/mcp`)
++  traefik.http.routers.zettelkasten-mcp.service: zettelkasten
++  traefik.http.routers.zettelkasten-mcp.entrypoints: web,websecure
+
+   # Health check (unchanged)
+   traefik.http.routers.zettelkasten-health.rule: Host(`mcp.localhost`) && Path(`/health`)
+   traefik.http.routers.zettelkasten-health.service: zettelkasten
+```
+
+**5.3 Rebuild Docker Image**
+```bash
+cd /Users/arustydev/repos/mcp/zettelkasten-mcp/docker
+
+# Build new image
+docker-compose build
+
+# Expected: Build succeeds with updated dependencies
+```
+
+**5.4 Test Docker Container**
+```bash
+# Start container
+docker-compose up -d
+
+# Check logs
+docker-compose logs -f zettelkasten
+
+# Expected:
+# INFO: Starting HTTP server on 0.0.0.0:8000
+# INFO: Uvicorn running on http://0.0.0.0:8000
+
+# Verify health
+curl http://localhost:8000/health
+
+# Test Streamable HTTP endpoint
+curl -v http://localhost:8000/mcp
+```
+
+**5.5 Test via Traefik (if configured)**
+```bash
+# Test through Traefik proxy
+curl http://mcp.localhost/health
+curl http://mcp.localhost/mcp
+
+# Expected: Routes correctly to container
+```
+
+**5.6 Stop and Clean Up**
+```bash
+# Stop container
+docker-compose down
+
+# Optional: Clean up old images
+docker image prune -f
+```
 
 **Deliverables:**
-- [ ] Docker deployment supports Streamable HTTP
-- [ ] Health checks working
-- [ ] Traefik routing configured
-- [ ] Deployment docs updated
+- ✅ Dockerfile verified (no changes needed)
+- ✅ docker-compose.yaml labels updated for `/mcp` endpoint
+- ✅ Docker image builds successfully
+- ✅ Container starts and serves traffic
+- ✅ Health and MCP endpoints work through Docker
+- ✅ Traefik routing works (if applicable)
 
-**Estimated Time:** 4 hours
+**Time Estimate:** 1 hour
 
 ---
 
-### Phase 11: Documentation & Examples
+### Phase 6: Documentation Updates (1 hour)
 
-**Goal:** Provide comprehensive documentation.
+**Objective:** Update documentation to reflect Streamable HTTP implementation
 
-**Tasks:**
-1. Update README.md with Streamable HTTP usage
-2. Create Streamable HTTP usage guide
-3. Add example client code
-4. Document migration from Legacy to Modern
-5. Update troubleshooting guide
-6. Create comparison table of transport modes
+#### Tasks:
 
-**Files to Create:**
-- `docs/project-knowledge/user/streamable-http-usage.md`
-- `docs/project-knowledge/user/transport-migration-guide.md`
+**6.1 Update README.md**
 
-**Files to Update:**
-- `README.md`
-- `docs/project-knowledge/user/HTTP_USAGE.md`
-- `docs/project-knowledge/user/troubleshooting-http-transport.md`
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/README.md`
+
+Update HTTP transport section:
+
+```markdown
+### HTTP Transport (Streamable HTTP)
+
+The server supports Modern Streamable HTTP transport for remote access:
+
+\`\`\`bash
+uv run python -m zettelkasten_mcp --transport http --port 8000
+\`\`\`
+
+**Endpoint:** `http://localhost:8000/mcp`
+
+**Connecting from Zed:**
+
+\`\`\`json
+{
+  "context_servers": {
+    "zettelkasten": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+\`\`\`
+
+**Connecting with mcp-remote:**
+
+\`\`\`bash
+npx mcp-remote http://localhost:8000/mcp
+\`\`\`
+
+**Health Check:** `http://localhost:8000/health`
+```
+
+**6.2 Create Migration Guide**
+
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/docs/migration/v1.6-to-v1.22-sdk-upgrade.md`
+
+```markdown
+# Migration Guide: MCP SDK 1.6.0 → 1.22.0
+
+This guide covers the upgrade to MCP SDK 1.22.0 for Streamable HTTP support.
+
+## Changes
+
+### Dependency Upgrade
+- **Before:** `mcp[cli]>=1.2.0` (resolved to 1.6.0)
+- **After:** `mcp[cli]>=1.22.0`
+
+### Transport Change
+- **Before:** Legacy HTTP+SSE (`/sse`, `/messages/`)
+- **After:** Modern Streamable HTTP (`/mcp`)
+
+### Code Changes
+1. Added `stateless_http=True` to FastMCP initialization
+2. Changed transport from `"sse"` to `"streamable-http"`
+3. Updated endpoint paths in Traefik labels
+
+### Client Configuration
+**Zed Editor:**
+\`\`\`json
+{
+  "context_servers": {
+    "zettelkasten": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp"  // Changed from /sse
+    }
+  }
+}
+\`\`\`
+
+## Backward Compatibility
+
+✅ **STDIO transport:** Unchanged, fully compatible
+❌ **Legacy HTTP+SSE:** Deprecated, removed in favor of Streamable HTTP
+
+## Testing
+
+See [Testing Guide](../testing/http-transport-testing.md)
+```
+
+**6.3 Update HTTP_IMPLEMENTATION.md**
+
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/.ai/plans/HTTP_IMPLEMENTATION.md`
+
+Update status to completed:
+
+```diff
+ ---
+ id: 15754957-34F7-418C-8E2A-319175C225C3
+-status: ✅ Completed
++status: 🗄️ Archived - Superseded by Streamable HTTP
++superseded_by: 2F7850D8-3E51-456C-AE60-C70BAF323BFB
+ ---
+
++**Note:** This plan implemented Legacy HTTP+SSE transport. It has been superseded by the Streamable HTTP implementation (MCP SDK 1.22.0 upgrade).
+```
+
+**6.4 Update Project Knowledge Docs**
+
+Update the status in:
+- `docs/project-knowledge/dev/mcp-http-transport-protocols.md`
+- `docs/project-knowledge/dev/streamable-http-implementation-options.md`
+
+Mark as "✅ Implemented" with implementation date.
+
+**6.5 Update CHANGELOG**
+
+File: `/Users/arustydev/repos/mcp/zettelkasten-mcp/CHANGELOG.md` (or create it)
+
+```markdown
+# Changelog
+
+## [Unreleased]
+
+### Added
+- Modern Streamable HTTP transport support (MCP SDK 1.22.0)
+- Single unified `/mcp` endpoint for all HTTP operations
+- Stateless HTTP mode for better scalability
+- Zed editor compatibility
+
+### Changed
+- Upgraded MCP SDK from 1.6.0 to 1.22.0
+- Migrated from Legacy HTTP+SSE to Modern Streamable HTTP
+- Updated Docker Traefik labels for new endpoint
+
+### Deprecated
+- Legacy HTTP+SSE transport (`/sse`, `/messages/` endpoints)
+
+### Removed
+- None (STDIO transport remains fully supported)
+
+### Fixed
+- Zed editor 60-second timeout issue
+- 405 Method Not Allowed errors with modern MCP clients
+```
 
 **Deliverables:**
-- [ ] Comprehensive usage guide
-- [ ] Migration documentation
-- [ ] Client examples
-- [ ] Troubleshooting updated
+- ✅ README.md updated with Streamable HTTP examples
+- ✅ Migration guide created
+- ✅ HTTP_IMPLEMENTATION.md marked as superseded
+- ✅ Project knowledge docs updated
+- ✅ CHANGELOG.md updated
 
-**Estimated Time:** 6 hours
-
----
-
-### Phase 12: Performance & Optimization
-
-**Goal:** Ensure Streamable HTTP is production-ready.
-
-**Tasks:**
-1. Add request/response logging
-2. Implement rate limiting (optional)
-3. Add metrics for session count, message throughput
-4. Optimize session cleanup
-5. Add connection pooling if needed
-6. Load testing with multiple clients
-
-**Deliverables:**
-- [ ] Performance metrics available
-- [ ] Rate limiting configured
-- [ ] Load testing results documented
-- [ ] Optimization recommendations
-
-**Estimated Time:** 6 hours
-
----
-
-### Phase 13: Contribute Upstream (Optional)
-
-**Goal:** Share implementation with FastMCP community.
-
-**Tasks:**
-1. Clean up code for upstream standards
-2. Add comprehensive docstrings
-3. Create PR for FastMCP repository
-4. Respond to code review feedback
-5. Update our fork/dependency based on upstream decision
-
-**Deliverables:**
-- [ ] PR submitted to FastMCP
-- [ ] Code review addressed
-- [ ] Dependency strategy decided
-
-**Estimated Time:** 8 hours (if upstream accepted)
-
----
-
-## Risk Assessment
-
-### High Risk
-
-**Risk:** Session management bugs causing memory leaks
-- **Mitigation:** Implement session timeout and cleanup
-- **Testing:** Load test with session churn
-
-**Risk:** Breaking backward compatibility
-- **Mitigation:** Comprehensive regression testing
-- **Testing:** Test matrix for all transport modes
-
-### Medium Risk
-
-**Risk:** Performance degradation with many concurrent sessions
-- **Mitigation:** Session pooling and cleanup
-- **Testing:** Load testing with 100+ concurrent sessions
-
-**Risk:** Zed client has additional undocumented requirements
-- **Mitigation:** Test early and iterate
-- **Testing:** Real-world testing with Zed
-
-### Low Risk
-
-**Risk:** FastMCP upstream rejects PR
-- **Mitigation:** Maintain fork if needed
-- **Impact:** More maintenance burden but functional
+**Time Estimate:** 1 hour
 
 ---
 
 ## Testing Strategy
 
-### Unit Tests
+### Automated Tests
 
-- [ ] Session manager CRUD operations
-- [ ] POST /mcp request parsing
-- [ ] GET /mcp SSE stream
-- [ ] DELETE /mcp session termination
-- [ ] Header validation and parsing
+**Unit Tests:**
+```bash
+# Run full test suite
+uv run pytest --verbose --cov=zettelkasten_mcp
 
-### Integration Tests
+# Expected: All tests pass
+```
 
-- [ ] Full MCP initialize-request-response flow
-- [ ] Session lifecycle end-to-end
-- [ ] Multiple concurrent sessions
-- [ ] Legacy HTTP+SSE regression tests
+**Integration Tests:**
+- Test STDIO transport (backward compatibility)
+- Test HTTP transport (Streamable HTTP)
+- Test health endpoint
+- Test all tools via MCP client
 
 ### Manual Tests
 
-- [ ] Zed connection and tool usage
-- [ ] mcp-remote with Streamable HTTP
-- [ ] Claude Desktop (if supports Streamable HTTP)
-- [ ] Direct curl/httpie testing
+**Test Matrix:**
 
-### Performance Tests
+| Transport | Client | Expected Result |
+|-----------|--------|----------------|
+| STDIO | MCP Inspector | ✅ Works |
+| STDIO | mcp-remote (stdio) | ✅ Works |
+| HTTP | Zed Editor | ✅ Works (no timeout) |
+| HTTP | mcp-remote (http) | ✅ Works |
+| HTTP | curl (health) | ✅ Works |
+| HTTP | curl (POST /mcp) | ✅ 202 Accepted |
 
-- [ ] 10 concurrent sessions
-- [ ] 100 concurrent sessions
-- [ ] Session creation/deletion throughput
-- [ ] Message latency under load
-
----
-
-## Timeline Estimate
-
-| Phase | Estimated Time | Cumulative |
-|-------|---------------|-----------|
-| 1. Research & Design | 4 hours | 4 hours |
-| 2. /mcp Endpoint | 6 hours | 10 hours |
-| 3. Session Management | 8 hours | 18 hours |
-| 4. POST Handler | 10 hours | 28 hours |
-| 5. GET Handler | 8 hours | 36 hours |
-| 6. Backward Compat | 4 hours | 40 hours |
-| 7. Config & CLI | 4 hours | 44 hours |
-| 8. Zed Testing | 3 hours | 47 hours |
-| 9. Docker Deploy | 4 hours | 51 hours |
-| 10. Documentation | 6 hours | 57 hours |
-| 11. Performance | 6 hours | 63 hours |
-| 12. Upstream (opt) | 8 hours | 71 hours |
-
-**Total Estimated Time:** 63-71 hours (8-9 days of focused work)
-
-**Recommended Schedule:**
-- Week 1: Phases 1-5 (Core implementation)
-- Week 2: Phases 6-9 (Integration & testing)
-- Week 3: Phases 10-12 (Polish & optimization)
+**Success Criteria:**
+- ✅ All automated tests pass
+- ✅ STDIO transport unchanged (regression test)
+- ✅ Zed connects without timeout
+- ✅ All tools callable via HTTP
+- ✅ Health endpoint returns 200 OK
+- ✅ Docker deployment works
 
 ---
 
-## Dependencies
+## Rollback Plan
 
-### External Libraries
+### If Upgrade Fails
 
-Current:
-- `mcp[cli]>=1.2.0` (has FastMCP)
-- `starlette>=0.27.0`
-- `uvicorn>=0.23.0`
+**Quick Rollback:**
+```bash
+# Revert git changes
+git checkout pyproject.toml uv.lock
+git checkout src/zettelkasten_mcp/
 
-Potentially Needed:
-- None (all required libraries already installed)
+# Reinstall old dependencies
+uv sync
 
-### Knowledge Requirements
+# Verify rollback
+uv pip show mcp  # Should show 1.6.0
+uv run python -m zettelkasten_mcp --transport stdio
+```
 
-- MCP 2025-03-26 specification understanding
-- SSE protocol and async Python
-- Starlette routing and middleware
-- Session management patterns
+**Docker Rollback:**
+```bash
+# Revert docker-compose.yaml
+git checkout docker/docker-compose.yaml
 
----
+# Rebuild with old version
+cd docker && docker-compose build && docker-compose up -d
+```
 
-## Acceptance Criteria
+### Known Risks
 
-### Must Have (MVP)
+**🟡 Risk: Breaking Changes in 16 Minor Versions**
+- **Mitigation:** Review changelog before upgrade
+- **Mitigation:** Run full test suite after upgrade
+- **Mitigation:** Keep rollback plan ready
 
-- [x] Research complete and design documented
-- [ ] `/mcp` endpoint handles POST, GET, DELETE
-- [ ] Session management working correctly
-- [ ] Zed connects successfully without timeout
-- [ ] Legacy HTTP+SSE still functional
-- [ ] All tests passing
-- [ ] Documentation updated
+**🟢 Risk: Dependency Conflicts**
+- **Mitigation:** Fresh `uv.lock` resolution
+- **Mitigation:** `uv pip check` to verify compatibility
+- **Mitigation:** Test in development environment first
 
-### Should Have
-
-- [ ] Performance optimizations applied
-- [ ] Rate limiting implemented
-- [ ] Comprehensive error handling
-- [ ] Production deployment tested
-
-### Nice to Have
-
-- [ ] FastMCP upstream PR accepted
-- [ ] Multi-instance session sharing
-- [ ] WebSocket transport exploration
+**🟢 Risk: FastMCP API Changes**
+- **Mitigation:** FastMCP 1.0 API is stable across versions
+- **Mitigation:** Decorator syntax unchanged since 1.0
+- **Expected:** Very low risk
 
 ---
 
 ## Success Metrics
 
-**Primary:**
-- ✅ Zed connection time < 5 seconds
-- ✅ Zero timeouts in Zed
-- ✅ 100% backward compatibility
-- ✅ All existing tests pass
+### Technical Metrics
 
-**Secondary:**
-- ⭐ Session overhead < 1MB per session
-- ⭐ Message latency < 100ms p99
-- ⭐ Support 50+ concurrent sessions
+- ✅ Zed connection time: < 2 seconds (was: 60s timeout)
+- ✅ HTTP response time: < 100ms for health check
+- ✅ Test coverage: Maintained or improved
+- ✅ Zero regressions in STDIO transport
 
----
+### Functional Metrics
 
-## Related Documentation
+- ✅ All 20+ MCP tools work via HTTP
+- ✅ All resources accessible
+- ✅ All prompts functional
+- ✅ Docker deployment successful
 
-- [MCP HTTP Transport Protocols](../../docs/project-knowledge/dev/mcp-http-transport-protocols.md)
-- [ADR: HTTP Transport Architecture](../../docs/project-knowledge/dev/adr-http-transport-architecture.md)
-- [HTTP Implementation Plan (Legacy)](./HTTP_IMPLEMENTATION.md)
+### Documentation Metrics
 
----
-
-## Next Actions
-
-1. **Review & Approve Plan** - Stakeholder sign-off
-2. **Prioritize in Backlog** - Determine sprint assignment
-3. **Begin Phase 1** - Research & design when approved
+- ✅ README.md updated
+- ✅ Migration guide created
+- ✅ Changelog updated
+- ✅ API examples correct
 
 ---
 
+## Timeline
+
+| Phase | Duration | Start | End |
+|-------|----------|-------|-----|
+| Phase 1: Preparation | 1 hour | T+0 | T+1 |
+| Phase 2: Dependencies | 1 hour | T+1 | T+2 |
+| Phase 3: Code Updates | 1-2 hours | T+2 | T+4 |
+| Phase 4: Testing | 2-3 hours | T+4 | T+7 |
+| Phase 5: Docker | 1 hour | T+7 | T+8 |
+| Phase 6: Documentation | 1 hour | T+8 | T+9 |
+
+**Total: 7-9 hours** (conservative estimate)
+**Fast Track: 4-6 hours** (if no issues)
+
+---
+
+## Post-Implementation
+
+### Verification Checklist
+
+After implementation is complete:
+
+- [ ] MCP SDK version is 1.22.0 (`uv pip show mcp`)
+- [ ] All tests pass (`uv run pytest`)
+- [ ] STDIO transport works (`uv run python -m zettelkasten_mcp --transport stdio`)
+- [ ] HTTP server starts (`uv run python -m zettelkasten_mcp --transport http`)
+- [ ] Health endpoint responds (`curl http://localhost:8000/health`)
+- [ ] `/mcp` endpoint accepts POST (`curl -X POST http://localhost:8000/mcp`)
+- [ ] Zed connects successfully (no timeout)
+- [ ] mcp-remote works (`npx mcp-remote http://localhost:8000/mcp`)
+- [ ] Docker build succeeds (`docker-compose build`)
+- [ ] Docker container runs (`docker-compose up -d`)
+- [ ] Documentation updated (README, migration guide, changelog)
+
+### Cleanup Tasks
+
+```bash
+# Remove backup artifacts
+rm -rf .ai/artifacts/pre-upgrade-*.txt
+rm -rf .ai/artifacts/post-upgrade-*.txt
+
+# Commit changes
+git add .
+git commit -m "feat: upgrade to MCP SDK 1.22.0 for Streamable HTTP support
+
+- Upgrade mcp[cli] from 1.6.0 to 1.22.0
+- Migrate from Legacy HTTP+SSE to Modern Streamable HTTP
+- Update endpoint from /sse to /mcp
+- Add stateless_http=True for better scalability
+- Update Docker Traefik labels
+- Update documentation and examples
+
+Fixes Zed editor timeout issue
+Enables compatibility with modern MCP clients
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git push origin feat/upgrade-mcp-sdk-1.22
+```
+
+---
+
+## Next Steps
+
+After successful implementation:
+
+1. **Create Pull Request**
+   - Target: Upstream repository (if contributing)
+   - Include: Migration guide, changelog, test results
+   - Reference: This implementation plan
+
+2. **Monitor Production**
+   - Watch for errors in logs
+   - Monitor connection success rate
+   - Track performance metrics
+
+3. **Update CI/CD**
+   - Verify GitHub Actions run with new SDK
+   - Update deployment scripts if needed
+
+4. **Archive Old Documentation**
+   - Mark Legacy HTTP+SSE docs as archived
+   - Update references to point to Streamable HTTP docs
+
+---
+
+## References
+
+- **MCP Python SDK**: https://github.com/modelcontextprotocol/python-sdk
+- **MCP Specification (2025-03-26)**: https://modelcontextprotocol.io/specification/2025-03-26
+- **FastMCP Documentation**: https://github.com/modelcontextprotocol/python-sdk/tree/main/src/mcp/server/fastmcp
+- **Cloudflare Blog**: https://blog.cloudflare.com/streamable-http-mcp-servers-python/
+- **Related Docs**:
+  - [MCP HTTP Transport Protocols](../../docs/project-knowledge/dev/mcp-http-transport-protocols.md)
+  - [Streamable HTTP Options Comparison](../../docs/project-knowledge/dev/streamable-http-implementation-options.md)
+  - [FastMCP Deep Dive](../../docs/project-knowledge/dev/fastmcp-deep-dive-comparison.md)
+
+---
+
+**Plan Status:** 📋 Ready for Implementation
 **Last Updated:** 2025-11-22
-**Status:** 📝 Awaiting approval to begin implementation
-**Estimated Completion:** 8-9 days after start
+**Next Action:** Begin Phase 1 (Preparation)

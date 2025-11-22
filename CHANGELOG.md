@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### In Progress
+- **Streamable HTTP Implementation (MCP SDK 1.22.0 Upgrade)**
+  - Phase 1: Preparation & Analysis ✅ Completed (2025-11-22)
+    - Created feature branch `feat/upgrade-mcp-sdk-1.22`
+    - Reviewed MCP SDK changelog (v1.6.0 → v1.22.0) - No breaking changes identified
+    - Backed up current state (packages, tests, API docs)
+    - Documented current endpoint behavior (Legacy HTTP+SSE)
+    - Updated project INDEX.md with new implementation plan
+    - Plan: [STREAMABLE_HTTP_IMPLEMENTATION.md](.ai/plans/STREAMABLE_HTTP_IMPLEMENTATION.md)
+    - Phase Files: [.ai/plans/phases/](.ai/plans/phases/)
+
 ### Added
 - HTTP transport support for the MCP server
   - Added starlette and uvicorn dependencies for HTTP/SSE transport
