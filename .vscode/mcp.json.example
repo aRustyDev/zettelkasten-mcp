@@ -7,7 +7,7 @@
         "run",
         "-i",
         "--name",
-        "zettelkasten-ast-grep",
+        "ast-grep",
         "--rm",
         "-v",
         "$PROJECT_DIR:/data",
@@ -21,7 +21,7 @@
         "run",
         "-i",
         "--name",
-        "zettelkasten-python-refactor",
+        "python-refactor",
         "--rm",
         "mcp/mcp-python-refactoring"
       ]
@@ -39,17 +39,13 @@
         "$XDG_DATA_HOME/mcp/zettelkasten/notes:/var/data/notes",
         "-v",
         "$XDG_DATA_HOME/mcp/zettelkasten/db:/var/data/db",
-        "$REGISTRY/mcp:zettelkasten"
+        "$REGISTRY/zettelkasten-mcp"
       ],
       "env": {
         "ZETTELKASTEN_LOG_LEVEL": "INFO",
-        "REGISTRY": "ghcr.io/arustydev"
+        "REGISTRY": "ghcr.io/arustydev",
+        "XDG_DATA_HOME": "~/.local/share"
       }
-    },
-    "just": {
-      "source": "custom",
-      "command": "just-mcp",
-      "args": ["--watch-dir", "$PROJECT_DIR"]
     }
   }
 }
