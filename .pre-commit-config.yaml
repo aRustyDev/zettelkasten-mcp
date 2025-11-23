@@ -47,7 +47,12 @@ repos:
         stages: [commit-msg]
         additional_dependencies:
           ["@commitlint/cli", "@commitlint/config-conventional"]
-# ---------------------------------------------------------------
-# - id: validate-frontmatter
-#   entry: python .ai/scripts/validate-frontmatter.py
-#   files: \.md$
+  - repo: local
+    hooks:
+      - id: validate-frontmatter
+        name: Validate Markdown Frontmatter
+        entry: python3 .ai/scripts/validate-frontmatter.py
+        language: system
+        files: \.md$
+        exclude: ^(README\.md|CHANGELOG\.md|\.github/.*\.md)$
+        pass_filenames: true
