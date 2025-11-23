@@ -1,24 +1,25 @@
 """Configuration module for the Zettelkasten MCP server."""
+
 import os
 from pathlib import Path
-from typing import Optional
+
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 # Load environment variables
 load_dotenv()
 
+
 class ZettelkastenConfig(BaseModel):
     """Configuration for the Zettelkasten server."""
+
     # Base directory for the project
     base_dir: Path = Field(
         default_factory=lambda: Path(os.getenv("ZETTELKASTEN_BASE_DIR", "."))
     )
     # Storage configuration
     notes_dir: Path = Field(
-        default_factory=lambda: Path(
-            os.getenv("ZETTELKASTEN_NOTES_DIR", "data/notes")
-        )
+        default_factory=lambda: Path(os.getenv("ZETTELKASTEN_NOTES_DIR", "data/notes"))
     )
     # Database configuration
     database_path: Path = Field(
@@ -32,17 +33,15 @@ class ZettelkastenConfig(BaseModel):
     )
     server_version: str = Field(default="1.2.1")
     # HTTP Transport Configuration
-    http_host: str = Field(
-        default=os.getenv("ZETTELKASTEN_HTTP_HOST", "0.0.0.0")
-    )
-    http_port: int = Field(
-        default=int(os.getenv("ZETTELKASTEN_HTTP_PORT", "8000"))
-    )
+    http_host: str = Field(default=os.getenv("ZETTELKASTEN_HTTP_HOST", "0.0.0.0"))
+    http_port: int = Field(default=int(os.getenv("ZETTELKASTEN_HTTP_PORT", "8000")))
     http_cors_enabled: bool = Field(
         default=os.getenv("ZETTELKASTEN_HTTP_CORS", "false").lower() == "true"
     )
     http_cors_origins: list[str] = Field(
-        default_factory=lambda: os.getenv("ZETTELKASTEN_HTTP_CORS_ORIGINS", "*").split(",")
+        default_factory=lambda: os.getenv("ZETTELKASTEN_HTTP_CORS_ORIGINS", "*").split(
+            ","
+        )
     )
     # FastMCP HTTP settings
     json_response: bool = Field(
@@ -69,18 +68,19 @@ class ZettelkastenConfig(BaseModel):
             "{links}\n"
         )
     )
-    
+
     def get_absolute_path(self, path: Path) -> Path:
         """Convert a relative path to an absolute path based on base_dir."""
         if path.is_absolute():
             return path
         return self.base_dir / path
-    
+
     def get_db_url(self) -> str:
         """Get the database URL for SQLite."""
         db_path = self.get_absolute_path(self.database_path)
         db_path.parent.mkdir(parents=True, exist_ok=True)
         return f"sqlite:///{db_path}"
+
 
 # Create a global config instance
 config = ZettelkastenConfig()
