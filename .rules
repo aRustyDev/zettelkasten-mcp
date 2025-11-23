@@ -47,3 +47,4 @@
 - when referencing documents
     - prefer UUID-based references over file paths
     - maintain bidirectional links (if A relates to B, B should relate to A)
+- Use the Sequential-Thinking MCP Server for all Planning and debugging activities.

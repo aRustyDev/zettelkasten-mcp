@@ -65,9 +65,10 @@ All workflows run automatically on push/pull requests to the `main` branch.
   - Checks `docker-compose.http.yml` syntax
 
 **Configuration files:**
-- `.yamllint` - YAML linting rules
-- `ruff.toml` - Python linting/formatting rules
-- `.markdownlint.json` - Markdown linting rules
+- `.ci/yamllint.yaml` - YAML linting rules
+- `.ci/ruff.toml` - Python linting/formatting rules
+- `.ci/markdownlint.json` - Markdown linting rules
+- `.markdownlint-cli2.yaml` - Markdown CLI2 configuration (root, references .ci/markdownlint.json)
 
 ### 3. Testing (`.github/workflows/test.yml`)
 
@@ -247,7 +248,7 @@ ruff format .
 **Solution:**
 - Check indentation (must be 2 spaces)
 - Run locally: `yamllint .github/workflows`
-- Fix according to `.yamllint` rules
+- Fix according to `.ci/yamllint.yaml` rules
 
 ## Workflow Status Badges
 

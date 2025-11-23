@@ -235,7 +235,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created `.github/workflows/docker-build.yml` - Docker build and push to ghcr.io and docker.io
 - Created `.github/workflows/lint.yml` - Multi-language linting (Python, Dockerfile, YAML, Markdown)
 - Created `.github/workflows/test.yml` - Automated test suite with coverage reporting
-- Added linter configuration files (`.yamllint`, `ruff.toml`, `.markdownlint.json`)
+- Added linter configuration files (`.ci/yamllint.yaml`, `.ci/ruff.toml`, `.ci/markdownlint.json`, `.markdownlint-cli2.yaml`)
 - Updated `pyproject.toml` with modern dev dependencies (pytest 8.0, pytest-cov 4.1, ruff)
 - Created `.github/CICD.md` - Comprehensive CI/CD setup and troubleshooting guide
 - All workflows trigger on push/PR to main branch

@@ -170,7 +170,7 @@ jobs:
         uses: ibiqlik/action-yamllint@v3
         with:
           file_or_dir: .github/workflows
-          config_file: .yamllint
+          config_file: .ci/yamllint.yaml
 
   lint-markdown:
     runs-on: ubuntu-latest
@@ -257,7 +257,7 @@ jobs:
 
 ### Step 13.4: Create Linter Configuration Files
 
-**File:** `.yamllint` (for yamllint)
+**File:** `.ci/yamllint.yaml` (for yamllint)
 ```yaml
 ---
 extends: default
@@ -272,7 +272,7 @@ rules:
     min-spaces-from-content: 1
 ```
 
-**File:** `ruff.toml` (for Python linting)
+**File:** `.ci/ruff.toml` (for Python linting)
 ```toml
 [lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM"]
@@ -287,7 +287,7 @@ indent-style = "space"
 line-ending = "auto"
 ```
 
-**File:** `.markdownlint.json` (for Markdown linting)
+**File:** `.ci/markdownlint.json` (for Markdown linting)
 ```json
 {
   "MD013": false,
@@ -380,9 +380,9 @@ Workflows:
 - .github/workflows/test.yml: Automated test suite with coverage
 
 Configuration:
-- .yamllint: YAML linting configuration
-- ruff.toml: Python linting and formatting rules
-- .markdownlint.json: Markdown linting rules
+- .ci/yamllint.yaml: YAML linting configuration
+- .ci/ruff.toml: Python linting and formatting rules
+- .ci/markdownlint.json: Markdown linting rules
 
 Features:
 - Docker images built on merge to main

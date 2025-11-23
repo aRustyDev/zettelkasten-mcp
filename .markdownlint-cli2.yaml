@@ -11,6 +11,6 @@ globs:
   - "!**/MCP Python SDK-README.md"
   - "!**/Example - A simple MCP server that exposes a website fetching tool.md"
 
-# Use the existing .markdownlint.json config
+# Use the existing markdownlint.json config
 config:
-  extends: .markdownlint.json
+  extends: .ci/markdownlint.json
