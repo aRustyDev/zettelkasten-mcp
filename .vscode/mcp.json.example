@@ -1,0 +1,55 @@
+{
+  "mcpServers": {
+    "ast-grep": {
+      "source": "custom",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--name",
+        "zettelkasten-ast-grep",
+        "--rm",
+        "-v",
+        "$PROJECT_DIR:/data",
+        "mcp/ast-grep"
+      ]
+    },
+    "python-refactor": {
+      "source": "custom",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--name",
+        "zettelkasten-python-refactor",
+        "--rm",
+        "mcp/mcp-python-refactoring"
+      ]
+    },
+    "zettelkasten": {
+      "source": "custom",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--name",
+        "zettelkasten",
+        "--rm",
+        "-v",
+        "$XDG_DATA_HOME/mcp/zettelkasten/notes:/var/data/notes",
+        "-v",
+        "$XDG_DATA_HOME/mcp/zettelkasten/db:/var/data/db",
+        "$REGISTRY/mcp:zettelkasten"
+      ],
+      "env": {
+        "ZETTELKASTEN_LOG_LEVEL": "INFO",
+        "REGISTRY": "ghcr.io/arustydev"
+      }
+    },
+    "just": {
+      "source": "custom",
+      "command": "just-mcp",
+      "args": ["--watch-dir", "$PROJECT_DIR"]
+    }
+  }
+}
