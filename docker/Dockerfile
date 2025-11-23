@@ -1,15 +1,3 @@
-FROM python:3.12-slim as repo
-
-SHELL ["/bin/bash", "-c"]
-
-ARG REPO=aRustyDev/zettelkasten-mcp
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-RUN git clone https://github.com/$REPO.git /app
-
 FROM python:3.12-slim as app
 
 SHELL ["/bin/bash", "-c"]
@@ -37,19 +25,19 @@ VOLUME ["${ZETTELKASTEN_NOTES_DIR}", "${ZETTELKASTEN_DATABASE_DIR}"]
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends git && \
+    apt-get install -y --no-install-recommends git=1:2.47.* && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install uv for Python package management
-RUN pip install --no-cache-dir uv
+RUN pip install --no-cache-dir uv==0.5.15
 
 # Set working directory
 WORKDIR /app
 
-# Copy project files
-COPY --from=repo /app/pyproject.toml /app/uv.lock /app/README.md ./
-COPY --from=repo /app/src/ /app/src/
+# Copy project files from local build context
+COPY pyproject.toml uv.lock README.md ./
+COPY src/ ./src/
 
 # Create virtual environment and install dependencies
 RUN uv venv && \
@@ -62,10 +50,10 @@ RUN mkdir -p ${ZETTELKASTEN_NOTES_DIR} ${ZETTELKASTEN_DATABASE_DIR}
 # Expose HTTP port
 EXPOSE $ZETTELKASTEN_HTTP_PORT
 
-# Health check endpoint (FastMCP may provide this)
+# Health check endpoint
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:$ZETTELKASTEN_HTTP_PORT/health').read()" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()" || exit 1
 
 # Run the server with HTTP transport
 ENTRYPOINT ["/app/.venv/bin/python", "-m", "zettelkasten_mcp.main"]
-CMD ["--transport", "http", "--host", "$ZETTELKASTEN_HTTP_HOST", "--port", "$ZETTELKASTEN_HTTP_PORT"]
+CMD ["--transport", "http"]

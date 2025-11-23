@@ -1,0 +1,16 @@
+# Configuration for markdownlint-cli2
+# See https://github.com/DavidAnson/markdownlint-cli2
+
+# Glob patterns to ignore
+globs:
+  - "**/*.md"
+  - "!.ai/**"
+  - "!.pytest_cache/**"
+  - "!node_modules/**"
+  - "!.venv/**"
+  - "!**/MCP Python SDK-README.md"
+  - "!**/Example - A simple MCP server that exposes a website fetching tool.md"
+
+# Use the existing markdownlint.json config
+config:
+  extends: .ci/markdownlint.json

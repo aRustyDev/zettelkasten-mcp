@@ -1,9 +1,11 @@
 ---
 id: 15754957-34F7-418C-8E2A-319175C225C3
 title: HTTP Transport Implementation Plan
-status: ✅ Completed
+status: 🗄️ Archived - Superseded by Streamable HTTP
 date: 2025-11-20
+archived_date: 2025-11-23
 author: aRustyDev
+superseded_by: 2F7850D8-3E51-456C-AE60-C70BAF323BFB  # Streamable HTTP Implementation
 related:
   - 9282B346-B74A-4522-B79C-690705DC1C92  # ADR: HTTP Transport Architecture
 children:
@@ -21,6 +23,10 @@ children:
   - 1475C4F2-7A5B-4279-A658-B3CBE07F5E31  # Phase 12
   - 9DFCF576-4B99-4BB6-A705-C986CB6CE1F6  # Phase 13
 ---
+
+> **⚠️ ARCHIVED:** This plan implemented Legacy HTTP+SSE transport (MCP SDK 1.6.0). It has been superseded by the [Streamable HTTP Implementation Plan](./STREAMABLE_HTTP_IMPLEMENTATION.md) (MCP SDK 1.22.0 upgrade) on 2025-11-23.
+>
+> **Migration Guide:** See [v1.6 to v1.22 SDK Upgrade](../docs/migration/v1.6-to-v1.22-sdk-upgrade.md) for upgrading from Legacy to Modern Streamable HTTP.
 
 # HTTP Transport Implementation Plan
 

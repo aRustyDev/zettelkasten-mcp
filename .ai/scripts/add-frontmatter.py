@@ -15,35 +15,37 @@ def generate_uuid():
 
 def extract_title(content):
     """Extract title from first H1 heading."""
-    match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
+    match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
     return match.group(1) if match else "Untitled Document"
 
 
 def has_frontmatter(content):
     """Check if document already has frontmatter."""
-    return content.strip().startswith('---')
+    return content.strip().startswith("---")
 
 
 def determine_status(file_path):
     """Determine appropriate status based on file location/type."""
     path_str = str(file_path)
 
-    if '/completed/' in path_str:
+    if "/completed/" in path_str:
         return "✅ Completed"
-    elif 'adr-' in path_str:
+    elif "adr-" in path_str:
         return "✅ Accepted"
-    elif 'INDEX.md' in path_str:
+    elif "INDEX.md" in path_str:
         return "⏳ Living Document"
-    elif 'FRONTMATTER_ADOPTION' in path_str:
+    elif "FRONTMATTER_ADOPTION" in path_str:
         return "✅ Completed"
     else:
         return "📝 Draft"
 
 
-def add_frontmatter(file_path, author="aRustyDev", doc_id=None, related=None, children=None):
+def add_frontmatter(
+    file_path, author="aRustyDev", doc_id=None, related=None, children=None
+):
     """Add frontmatter to a markdown file."""
     # Read existing content
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, encoding="utf-8") as f:
         content = f.read()
 
     # Skip if already has frontmatter
@@ -88,7 +90,7 @@ def add_frontmatter(file_path, author="aRustyDev", doc_id=None, related=None, ch
     new_content = "\n".join(frontmatter_lines) + content
 
     # Write back
-    with open(file_path, 'w', encoding='utf-8') as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         f.write(new_content)
 
     print(f"✓ Added frontmatter to {file_path.name} (UUID: {doc_id[:8]}...)")
@@ -109,7 +111,7 @@ def main():
         files = [Path(f) for f in sys.argv[1:]]
 
     for file_path in files:
-        if file_path.exists() and file_path.suffix == '.md':
+        if file_path.exists() and file_path.suffix == ".md":
             add_frontmatter(file_path)
         else:
             print(f"❌ Skipping {file_path} (not found or not .md)")

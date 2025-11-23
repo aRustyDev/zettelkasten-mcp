@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### In Progress
+- **Streamable HTTP Implementation (MCP SDK 1.22.0 Upgrade)**
+  - Phase 1: Preparation & Analysis ✅ Completed (2025-11-22)
+    - Created feature branch `feat/upgrade-mcp-sdk-1.22`
+    - Reviewed MCP SDK changelog (v1.6.0 → v1.22.0) - No breaking changes identified
+    - Backed up current state (packages, tests, API docs)
+    - Documented current endpoint behavior (Legacy HTTP+SSE)
+    - Updated project INDEX.md with new implementation plan
+    - Plan: [STREAMABLE_HTTP_IMPLEMENTATION.md](.ai/plans/STREAMABLE_HTTP_IMPLEMENTATION.md)
+    - Phase Files: [.ai/plans/phases/](.ai/plans/phases/)
+  - Phase 2: Upgrade Dependencies ✅ Completed (2025-11-22)
+    - Updated `pyproject.toml`: `mcp[cli]>=1.2.0` → `mcp[cli]>=1.22.0`
+    - Successfully upgraded MCP Python SDK: 1.6.0 → 1.22.0
+    - All dependency conflicts resolved (41 packages compatible)
+    - FastMCP imports verified working
+    - New dependencies added: attrs, cffi, cryptography, jsonschema, pyjwt, python-multipart
+    - Key upgrades: pydantic 2.11.1→2.12.4, starlette 0.46.1→0.50.0, uvicorn 0.34.0→0.38.0
+  - Phase 3: Code Updates for Streamable HTTP ✅ Completed (2025-11-22)
+    - Added `stateless_http=True` to FastMCP initialization
+    - Updated config class: added `stateless_http` and `streamable_http_path` fields
+    - Migrated from `sse_app()` to `streamable_http_app()` in server run method
+    - Updated endpoint path: `/sse` + `/messages/` → `/mcp` (unified endpoint)
+    - Updated health check transport: "http" → "streamable-http"
+    - Updated CORS allowed methods to include DELETE
+    - Verified no hardcoded SSE references remain
+  - Phase 4: Testing & Validation ✅ Completed (2025-11-22)
+    - Fixed FastMCP API compatibility: Removed `version` parameter from FastMCP.__init__()
+    - Changed first parameter from positional to keyword: `name=config.server_name`
+    - Used `streamable_http_app()` method (confirmed available in MCP SDK 1.22.0)
+    - Fixed lifespan initialization: Added health check as custom route via `@mcp.custom_route()`
+    - Removed wrapper function to preserve FastMCP lifespan context
+    - Streamable HTTP session manager now initializes properly
+    - All 103 unit tests passing, 27 skipped, 0 failures
+    - STDIO transport: ✅ Backward compatibility confirmed
+    - HTTP server: ✅ Starts successfully with Streamable HTTP
+    - Health endpoint: ✅ Returns 200 OK with correct JSON
+    - POST /mcp endpoint: ✅ Returns 200 OK (NOT 405, NOT 500!)
+    - Legacy /sse endpoint: ✅ Returns 404 as expected
+  - Phase 5: Docker & Deployment Updates ✅ Completed (2025-11-23)
+    - Fixed Dockerfile to use local code instead of cloning from GitHub
+    - Removed multi-stage build (repo stage) - now uses build context directly
+    - Updated docker-compose.yaml Traefik labels for Streamable HTTP:
+      - ❌ Removed: `zettelkasten-sse` router (old `/sse` endpoint)
+      - ❌ Removed: `zettelkasten-messages` router (old `/messages/` endpoint)
+      - ✅ Added: `zettelkasten-mcp` router (new `/mcp` endpoint)
+      - ✅ Kept: Health check router unchanged
+    - Verified Dockerfile CMD: `["--transport", "http"]` ✅ Already correct
+    - Docker deployment fully tested and working:
+      - ✅ Image builds with local code and MCP SDK 1.22.0
+      - ✅ Container starts with Streamable HTTP
+      - ✅ Health endpoint returns `"transport": "streamable-http"`
+      - ✅ POST /mcp endpoint returns 200 OK
+      - ✅ StreamableHTTP session manager initializes properly
+
 ### Added
 - HTTP transport support for the MCP server
   - Added starlette and uvicorn dependencies for HTTP/SSE transport
@@ -181,7 +235,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created `.github/workflows/docker-build.yml` - Docker build and push to ghcr.io and docker.io
 - Created `.github/workflows/lint.yml` - Multi-language linting (Python, Dockerfile, YAML, Markdown)
 - Created `.github/workflows/test.yml` - Automated test suite with coverage reporting
-- Added linter configuration files (`.yamllint`, `ruff.toml`, `.markdownlint.json`)
+- Added linter configuration files (`.ci/yamllint.yaml`, `.ci/ruff.toml`, `.ci/markdownlint.json`, `.markdownlint-cli2.yaml`)
 - Updated `pyproject.toml` with modern dev dependencies (pytest 8.0, pytest-cov 4.1, ruff)
 - Created `.github/CICD.md` - Comprehensive CI/CD setup and troubleshooting guide
 - All workflows trigger on push/PR to main branch

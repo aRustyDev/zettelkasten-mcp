@@ -1,8 +1,11 @@
 """Tests for HTTP transport functionality."""
+
+from unittest.mock import MagicMock, Mock, call, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock, call
-from zettelkasten_mcp.server.mcp_server import ZettelkastenMcpServer
+
 from zettelkasten_mcp.config import config
+from zettelkasten_mcp.server.mcp_server import ZettelkastenMcpServer
 
 
 class TestHTTPTransport:
@@ -21,10 +24,10 @@ class TestHTTPTransport:
         # This is verified by checking the config value was used
         assert config.json_response is True
 
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
     def test_stdio_transport_selected_by_default(self, mock_logger, server):
         """Test that STDIO is the default transport."""
-        with patch.object(server.mcp, 'run') as mock_run:
+        with patch.object(server.mcp, "run") as mock_run:
             server.run()
 
             # Verify mcp.run() was called for STDIO mode
@@ -32,75 +35,91 @@ class TestHTTPTransport:
             # Verify STDIO logging message
             mock_logger.info.assert_called_with("Starting STDIO server")
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
     def test_http_transport_with_default_port(self, mock_logger, mock_uvicorn, server):
         """Test HTTP transport starts on default port 8000."""
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()) as mock_sse_app:
+        with patch.object(server.mcp, "sse_app", return_value=Mock()) as mock_sse_app:
             server.run(transport="http")
 
             # Verify uvicorn.run() was called with correct defaults
             mock_uvicorn.run.assert_called_once()
             call_args = mock_uvicorn.run.call_args
 
-            assert call_args[1]['host'] == config.http_host
-            assert call_args[1]['port'] == config.http_port
+            assert call_args[1]["host"] == config.http_host
+            assert call_args[1]["port"] == config.http_port
             # Verify sse_app was called
             mock_sse_app.assert_called_once()
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
     def test_http_transport_with_custom_port(self, mock_logger, mock_uvicorn, server):
         """Test HTTP transport starts on custom port."""
         custom_port = 9001
 
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()):
+        with patch.object(server.mcp, "sse_app", return_value=Mock()):
             server.run(transport="http", port=custom_port)
 
             # Verify uvicorn.run() was called with custom port
             call_args = mock_uvicorn.run.call_args
-            assert call_args[1]['port'] == custom_port
+            assert call_args[1]["port"] == custom_port
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
     def test_http_transport_with_custom_host(self, mock_logger, mock_uvicorn, server):
         """Test HTTP transport binds to custom host."""
         custom_host = "127.0.0.1"
 
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()):
+        with patch.object(server.mcp, "sse_app", return_value=Mock()):
             server.run(transport="http", host=custom_host)
 
             # Verify uvicorn.run() was called with custom host
             call_args = mock_uvicorn.run.call_args
-            assert call_args[1]['host'] == custom_host
+            assert call_args[1]["host"] == custom_host
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
-    def test_http_transport_with_custom_host_and_port(self, mock_logger, mock_uvicorn, server):
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
+    def test_http_transport_with_custom_host_and_port(
+        self, mock_logger, mock_uvicorn, server
+    ):
         """Test HTTP transport with both custom host and port."""
         custom_host = "192.168.1.100"
         custom_port = 9500
 
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()):
+        with patch.object(server.mcp, "sse_app", return_value=Mock()):
             server.run(transport="http", host=custom_host, port=custom_port)
 
             # Verify uvicorn.run() was called with custom values
             call_args = mock_uvicorn.run.call_args
-            assert call_args[1]['host'] == custom_host
-            assert call_args[1]['port'] == custom_port
+            assert call_args[1]["host"] == custom_host
+            assert call_args[1]["port"] == custom_port
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
-    def test_cors_middleware_not_applied_by_default(self, mock_logger, mock_uvicorn, server):
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
+    def test_cors_middleware_not_applied_by_default(
+        self, mock_logger, mock_uvicorn, server
+    ):
         """Test that CORS middleware is not applied by default."""
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()) as mock_sse_app:
+        with patch.object(server.mcp, "sse_app", return_value=Mock()) as mock_sse_app:
             # Mock CORSMiddleware to verify it's not imported/used
-            with patch('zettelkasten_mcp.server.mcp_server.CORSMiddleware', create=True) as mock_cors:
+            with patch(
+                "zettelkasten_mcp.server.mcp_server.CORSMiddleware", create=True
+            ) as mock_cors:
                 server.run(transport="http", enable_cors=False)
 
                 # Verify CORSMiddleware was NOT called
@@ -108,16 +127,23 @@ class TestHTTPTransport:
                 # Verify sse_app result was passed directly to uvicorn
                 mock_sse_app.assert_called_once()
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
-    def test_cors_middleware_applied_when_enabled(self, mock_logger, mock_uvicorn, server):
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
+    def test_cors_middleware_applied_when_enabled(
+        self, mock_logger, mock_uvicorn, server
+    ):
         """Test that CORS middleware is applied when enabled."""
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()) as mock_sse_app:
+        with patch.object(server.mcp, "sse_app", return_value=Mock()):
             # Create a mock for CORSMiddleware that will be imported
             mock_cors_instance = Mock()
 
-            with patch('zettelkasten_mcp.server.mcp_server.CORSMiddleware', return_value=mock_cors_instance) as mock_cors_class:
+            with patch(
+                "zettelkasten_mcp.server.mcp_server.CORSMiddleware",
+                return_value=mock_cors_instance,
+            ) as mock_cors_class:
                 server.run(transport="http", enable_cors=True)
 
                 # Verify CORSMiddleware was called
@@ -127,74 +153,92 @@ class TestHTTPTransport:
                 call_args = mock_uvicorn.run.call_args
                 assert call_args[0][0] == mock_cors_instance
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
     def test_cors_origins_configuration(self, mock_logger, mock_uvicorn, server):
         """Test that CORS origins are correctly configured."""
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()):
-            with patch('zettelkasten_mcp.server.mcp_server.CORSMiddleware') as mock_cors:
-                server.run(transport="http", enable_cors=True)
+        with (
+            patch.object(server.mcp, "sse_app", return_value=Mock()),
+            patch("zettelkasten_mcp.server.mcp_server.CORSMiddleware") as mock_cors,
+        ):
+            server.run(transport="http", enable_cors=True)
 
-                # Verify CORSMiddleware was called with correct origins
-                call_args = mock_cors.call_args
-                assert call_args[1]['allow_origins'] == config.http_cors_origins
+            # Verify CORSMiddleware was called with correct origins
+            call_args = mock_cors.call_args
+            assert call_args[1]["allow_origins"] == config.http_cors_origins
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
     def test_cors_middleware_configuration(self, mock_logger, mock_uvicorn, server):
         """Test that CORS middleware is configured with correct parameters."""
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()):
-            with patch('zettelkasten_mcp.server.mcp_server.CORSMiddleware') as mock_cors:
-                server.run(transport="http", enable_cors=True)
+        with (
+            patch.object(server.mcp, "sse_app", return_value=Mock()),
+            patch("zettelkasten_mcp.server.mcp_server.CORSMiddleware") as mock_cors,
+        ):
+            server.run(transport="http", enable_cors=True)
 
-                # Verify CORSMiddleware was called with all correct parameters
-                call_args = mock_cors.call_args
-                assert call_args[1]['allow_methods'] == ["GET", "POST", "OPTIONS"]
-                assert call_args[1]['allow_headers'] == ["*"]
-                assert call_args[1]['expose_headers'] == ["Mcp-Session-Id"]
+            # Verify CORSMiddleware was called with all correct parameters
+            call_args = mock_cors.call_args
+            assert call_args[1]["allow_methods"] == ["GET", "POST", "OPTIONS"]
+            assert call_args[1]["allow_headers"] == ["*"]
+            assert call_args[1]["expose_headers"] == ["Mcp-Session-Id"]
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
     def test_sse_app_method_called_for_http(self, mock_logger, mock_uvicorn, server):
         """Test that sse_app() is called for HTTP transport."""
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()) as mock_sse_app:
+        with patch.object(server.mcp, "sse_app", return_value=Mock()) as mock_sse_app:
             server.run(transport="http")
 
             # Verify self.mcp.sse_app() was called
             mock_sse_app.assert_called_once()
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
     def test_http_logging_without_cors(self, mock_logger, mock_uvicorn, server):
         """Test that correct log message is generated for HTTP without CORS."""
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()):
+        with patch.object(server.mcp, "sse_app", return_value=Mock()):
             server.run(transport="http", host="localhost", port=8080, enable_cors=False)
 
             # Verify logging message
-            mock_logger.info.assert_called_with("Starting HTTP server on localhost:8080")
+            mock_logger.info.assert_called_with(
+                "Starting HTTP server on localhost:8080"
+            )
 
-    @pytest.mark.skip(reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details.")
-    @patch('zettelkasten_mcp.server.mcp_server.uvicorn')
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
+    @pytest.mark.skip(
+        reason="Dynamic uvicorn import: uvicorn imported inside run() method cannot be patched at module level. See docs/project-knowledge/dev/http-transport-test-improvements.md for details."
+    )
+    @patch("zettelkasten_mcp.server.mcp_server.uvicorn")
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
     def test_http_logging_with_cors(self, mock_logger, mock_uvicorn, server):
         """Test that correct log message is generated for HTTP with CORS."""
-        with patch.object(server.mcp, 'sse_app', return_value=Mock()):
-            with patch('zettelkasten_mcp.server.mcp_server.CORSMiddleware'):
-                server.run(transport="http", host="localhost", port=8080, enable_cors=True)
+        with patch.object(server.mcp, "sse_app", return_value=Mock()):
+            with patch("zettelkasten_mcp.server.mcp_server.CORSMiddleware"):
+                server.run(
+                    transport="http", host="localhost", port=8080, enable_cors=True
+                )
 
                 # Verify logging message includes CORS
                 mock_logger.info.assert_called_with(
                     "Starting HTTP server on localhost:8080 with CORS enabled"
                 )
 
-    @patch('zettelkasten_mcp.server.mcp_server.logger')
+    @patch("zettelkasten_mcp.server.mcp_server.logger")
     def test_stdio_logging(self, mock_logger, server):
         """Test that correct log message is generated for STDIO transport."""
-        with patch.object(server.mcp, 'run'):
+        with patch.object(server.mcp, "run"):
             server.run(transport="stdio")
 
             # Verify logging message

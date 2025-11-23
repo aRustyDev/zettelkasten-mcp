@@ -179,14 +179,17 @@ Add this to your Claude Desktop config file:
 }
 ```
 
-### HTTP Transport
+### HTTP Transport (Streamable HTTP)
 
-HTTP transport (using Server-Sent Events) enables remote access to the MCP server. This is useful for:
+HTTP transport using Modern Streamable HTTP enables remote access to the MCP server. This is useful for:
 
 - **Remote access**: Connect to the server from different machines
-- **Browser-based clients**: Use web-based MCP clients
-- **Development**: Testing with tools like Claude Code CLI
+- **Editor integration**: Connect from Zed, VS Code, or other MCP-compatible editors
+- **Development**: Testing with tools like Claude Code CLI or mcp-remote
 - **Team collaboration**: Share a single server instance (with appropriate security measures)
+
+**Endpoint:** `http://localhost:8000/mcp` (unified endpoint for all operations)
+**Health Check:** `http://localhost:8000/health`
 
 **Basic Usage:**
 
@@ -199,6 +202,28 @@ python -m zettelkasten_mcp.main --transport http --port 9000
 
 # Start with custom host and port
 python -m zettelkasten_mcp.main --transport http --host 0.0.0.0 --port 8080
+```
+
+**Connecting from Zed Editor:**
+
+Add to your Zed settings (`~/.config/zed/settings.json`):
+
+```json
+{
+  "context_servers": {
+    "zettelkasten": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+**Connecting with mcp-remote:**
+
+```bash
+# Interactive MCP client
+npx mcp-remote http://localhost:8000/mcp
 ```
 
 **With CORS (for browser-based clients):**

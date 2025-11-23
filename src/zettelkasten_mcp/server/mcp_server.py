@@ -1,12 +1,14 @@
 """MCP server implementation for the Zettelkasten."""
+
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+
+from mcp.server.fastmcp import FastMCP
 from sqlalchemy import exc as sqlalchemy_exc
-from mcp.server.fastmcp import Context, FastMCP
+
 from zettelkasten_mcp.config import config
-from zettelkasten_mcp.models.schema import LinkType, Note, NoteType, Tag
+from zettelkasten_mcp.models.schema import LinkType, NoteType
 from zettelkasten_mcp.services.search_service import SearchService
 from zettelkasten_mcp.services.zettel_service import ZettelService
 
@@ -17,24 +19,29 @@ async def health_check(request):
     """Health check endpoint for Docker/Kubernetes monitoring."""
     from starlette.responses import JSONResponse
 
-    return JSONResponse({
-        "status": "healthy",
-        "service": "zettelkasten-mcp",
-        "transport": "http"
-    })
+    return JSONResponse(
+        {
+            "status": "healthy",
+            "service": "zettelkasten-mcp",
+            "transport": "streamable-http",
+        }
+    )
 
 
 def create_app_with_health(mcp_app):
-    """Wrap MCP SSE app with health check endpoint.
+    """Wrap MCP HTTP app with health check endpoint.
 
     Args:
-        mcp_app: The MCP SSE ASGI application
+        mcp_app: The MCP HTTP ASGI application (StarletteWithLifespan)
 
     Returns:
         Starlette application with /health endpoint and MCP app mounted at root
+
+    Note:
+        The mounted MCP app will execute its own lifespan for session initialization.
     """
-    from starlette.routing import Route, Mount
     from starlette.applications import Starlette
+    from starlette.routing import Mount, Route
 
     return Starlette(
         routes=[
@@ -43,14 +50,16 @@ def create_app_with_health(mcp_app):
         ]
     )
 
+
 class ZettelkastenMcpServer:
     """MCP server for Zettelkasten."""
+
     def __init__(self):
         """Initialize the MCP server."""
         self.mcp = FastMCP(
-            config.server_name,
-            version=config.server_version,
+            name=config.server_name,
             json_response=config.json_response,
+            stateless_http=True,  # Optimize for Streamable HTTP transport
         )
         # Services
         self.zettel_service = ZettelService()
@@ -70,16 +79,16 @@ class ZettelkastenMcpServer:
 
     def format_error_response(self, error: Exception) -> str:
         """Format an error response in a consistent way.
-        
+
         Args:
             error: The exception that occurred
-            
+
         Returns:
             Formatted error message with appropriate level of detail
         """
         # Generate a unique error ID for traceability in logs
         error_id = str(uuid.uuid4())[:8]
-        
+
         if isinstance(error, ValueError):
             # Domain validation errors - typically safe to show to users
             logger.error(f"Validation error [{error_id}]: {str(error)}")
@@ -97,13 +106,14 @@ class ZettelkastenMcpServer:
 
     def _register_tools(self) -> None:
         """Register MCP tools."""
+
         # Create a new note
         @self.mcp.tool(name="zk_create_note")
         def zk_create_note(
-            title: str, 
-            content: str, 
+            title: str,
+            content: str,
             note_type: str = "permanent",
-            tags: Optional[str] = None
+            tags: str | None = None,
         ) -> str:
             """Create a new Zettelkasten note.
             Args:
@@ -118,12 +128,12 @@ class ZettelkastenMcpServer:
                     note_type_enum = NoteType(note_type.lower())
                 except ValueError:
                     return f"Invalid note type: {note_type}. Valid types are: {', '.join(t.value for t in NoteType)}"
-                
+
                 # Convert tags string to list
                 tag_list = []
                 if tags:
                     tag_list = [t.strip() for t in tags.split(",") if t.strip()]
-                
+
                 # Create the note
                 note = self.zettel_service.create_note(
                     title=title,
@@ -151,7 +161,7 @@ class ZettelkastenMcpServer:
                     note = self.zettel_service.get_note_by_title(identifier)
                 if not note:
                     return f"Note not found: {identifier}"
-                
+
                 # Format the note
                 result = f"# {note.title}\n"
                 result += f"ID: {note.id}\n"
@@ -170,10 +180,10 @@ class ZettelkastenMcpServer:
         @self.mcp.tool(name="zk_update_note")
         def zk_update_note(
             note_id: str,
-            title: Optional[str] = None,
-            content: Optional[str] = None,
-            note_type: Optional[str] = None,
-            tags: Optional[str] = None
+            title: str | None = None,
+            content: str | None = None,
+            note_type: str | None = None,
+            tags: str | None = None,
         ) -> str:
             """Update an existing note.
             Args:
@@ -188,7 +198,7 @@ class ZettelkastenMcpServer:
                 note = self.zettel_service.get_note(str(note_id))
                 if not note:
                     return f"Note not found: {note_id}"
-                
+
                 # Convert note_type string to enum if provided
                 note_type_enum = None
                 if note_type:
@@ -196,19 +206,19 @@ class ZettelkastenMcpServer:
                         note_type_enum = NoteType(note_type.lower())
                     except ValueError:
                         return f"Invalid note type: {note_type}. Valid types are: {', '.join(t.value for t in NoteType)}"
-                
+
                 # Convert tags string to list if provided
                 tag_list = None
                 if tags is not None:  # Allow empty string to clear tags
                     tag_list = [t.strip() for t in tags.split(",") if t.strip()]
-                
+
                 # Update the note
                 updated_note = self.zettel_service.update_note(
                     note_id=note_id,
                     title=title,
                     content=content,
                     note_type=note_type_enum,
-                    tags=tag_list
+                    tags=tag_list,
                 )
                 return f"Note updated successfully: {updated_note.id}"
             except Exception as e:
@@ -226,7 +236,7 @@ class ZettelkastenMcpServer:
                 note = self.zettel_service.get_note(note_id)
                 if not note:
                     return f"Note not found: {note_id}"
-                
+
                 # Delete the note
                 self.zettel_service.delete_note(str(note_id))
                 return f"Note deleted successfully: {note_id}"
@@ -239,8 +249,8 @@ class ZettelkastenMcpServer:
             source_id: str,
             target_id: str,
             link_type: str = "reference",
-            description: Optional[str] = None,
-            bidirectional: bool = False
+            description: str | None = None,
+            bidirectional: bool = False,
         ) -> str:
             """Create a link between two notes.
             Args:
@@ -253,19 +263,19 @@ class ZettelkastenMcpServer:
             try:
                 # Convert link_type string to enum
                 try:
-                    source_id_str = str(source_id)
-                    target_id_str = str(target_id)
+                    str(source_id)
+                    str(target_id)
                     link_type_enum = LinkType(link_type.lower())
                 except ValueError:
                     return f"Invalid link type: {link_type}. Valid types are: {', '.join(t.value for t in LinkType)}"
-                
+
                 # Create the link
                 source_note, target_note = self.zettel_service.create_link(
                     source_id=source_id,
                     target_id=target_id,
                     link_type=link_type_enum,
                     description=description,
-                    bidirectional=bidirectional
+                    bidirectional=bidirectional,
                 )
                 if bidirectional:
                     return f"Bidirectional link created between {source_id} and {target_id}"
@@ -273,16 +283,15 @@ class ZettelkastenMcpServer:
                     return f"Link created from {source_id} to {target_id}"
             except (Exception, sqlalchemy_exc.IntegrityError) as e:
                 if "UNIQUE constraint failed" in str(e):
-                    return f"A link of this type already exists between these notes. Try a different link type."
+                    return "A link of this type already exists between these notes. Try a different link type."
                 return self.format_error_response(e)
+
         self.zk_create_link = zk_create_link
 
         # Remove a link between notes
         @self.mcp.tool(name="zk_remove_link")
         def zk_remove_link(
-            source_id: str,
-            target_id: str,
-            bidirectional: bool = False
+            source_id: str, target_id: str, bidirectional: bool = False
         ) -> str:
             """Remove a link between two notes.
             Args:
@@ -295,7 +304,7 @@ class ZettelkastenMcpServer:
                 source_note, target_note = self.zettel_service.remove_link(
                     source_id=str(source_id),
                     target_id=str(target_id),
-                    bidirectional=bidirectional
+                    bidirectional=bidirectional,
                 )
                 if bidirectional:
                     return f"Bidirectional link removed between {source_id} and {target_id}"
@@ -307,10 +316,10 @@ class ZettelkastenMcpServer:
         # Search for notes
         @self.mcp.tool(name="zk_search_notes")
         def zk_search_notes(
-            query: Optional[str] = None,
-            tags: Optional[str] = None,
-            note_type: Optional[str] = None,
-            limit: int = 10
+            query: str | None = None,
+            tags: str | None = None,
+            note_type: str | None = None,
+            limit: int = 10,
         ) -> str:
             """Search for notes by text, tags, or type.
             Args:
@@ -324,7 +333,7 @@ class ZettelkastenMcpServer:
                 tag_list = None
                 if tags:
                     tag_list = [t.strip() for t in tags.split(",") if t.strip()]
-                
+
                 # Convert note_type string to enum if provided
                 note_type_enum = None
                 if note_type:
@@ -332,26 +341,26 @@ class ZettelkastenMcpServer:
                         note_type_enum = NoteType(note_type.lower())
                     except ValueError:
                         return f"Invalid note type: {note_type}. Valid types are: {', '.join(t.value for t in NoteType)}"
-                
+
                 # Perform search
                 results = self.search_service.search_combined(
-                    text=query,
-                    tags=tag_list,
-                    note_type=note_type_enum
+                    text=query, tags=tag_list, note_type=note_type_enum
                 )
-                
+
                 # Limit results
                 results = results[:limit]
                 if not results:
                     return "No matching notes found."
-                
+
                 # Format results
                 output = f"Found {len(results)} matching notes:\n\n"
                 for i, result in enumerate(results, 1):
                     note = result.note
                     output += f"{i}. {note.title} (ID: {note.id})\n"
                     if note.tags:
-                        output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        output += (
+                            f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        )
                     output += f"   Created: {note.created_at.strftime('%Y-%m-%d')}\n"
                     # Add a snippet of content (first 150 chars)
                     content_preview = note.content[:150].replace("\n", " ")
@@ -364,10 +373,7 @@ class ZettelkastenMcpServer:
 
         # Get linked notes
         @self.mcp.tool(name="zk_get_linked_notes")
-        def zk_get_linked_notes(
-            note_id: str,
-            direction: str = "both"
-        ) -> str:
+        def zk_get_linked_notes(note_id: str, direction: str = "both") -> str:
             """Get notes linked to/from a note.
             Args:
                 note_id: ID of the note
@@ -377,7 +383,9 @@ class ZettelkastenMcpServer:
                 if direction not in ["outgoing", "incoming", "both"]:
                     return f"Invalid direction: {direction}. Use 'outgoing', 'incoming', or 'both'."
                 # Get linked notes
-                linked_notes = self.zettel_service.get_linked_notes(str(note_id), direction)
+                linked_notes = self.zettel_service.get_linked_notes(
+                    str(note_id), direction
+                )
                 if not linked_notes:
                     return f"No {direction} links found for note {note_id}."
                 # Format results
@@ -385,23 +393,33 @@ class ZettelkastenMcpServer:
                 for i, note in enumerate(linked_notes, 1):
                     output += f"{i}. {note.title} (ID: {note.id})\n"
                     if note.tags:
-                        output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        output += (
+                            f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        )
                     # Try to determine link type
                     if direction in ["outgoing", "both"]:
                         # Check source note's outgoing links
                         source_note = self.zettel_service.get_note(str(note_id))
                         if source_note:
                             for link in source_note.links:
-                                if str(link.target_id) == str(note.id):  # Explicit string conversion for comparison
+                                if str(link.target_id) == str(
+                                    note.id
+                                ):  # Explicit string conversion for comparison
                                     output += f"   Link type: {link.link_type.value}\n"
                                     if link.description:
-                                        output += f"   Description: {link.description}\n"
+                                        output += (
+                                            f"   Description: {link.description}\n"
+                                        )
                                     break
                     if direction in ["incoming", "both"]:
                         # Check target note's outgoing links
                         for link in note.links:
-                            if str(link.target_id) == str(note_id):  # Explicit string conversion for comparison
-                                output += f"   Incoming link type: {link.link_type.value}\n"
+                            if str(link.target_id) == str(
+                                note_id
+                            ):  # Explicit string conversion for comparison
+                                output += (
+                                    f"   Incoming link type: {link.link_type.value}\n"
+                                )
                                 if link.description:
                                     output += f"   Description: {link.description}\n"
                                 break
@@ -409,6 +427,7 @@ class ZettelkastenMcpServer:
                 return output
             except Exception as e:
                 return self.format_error_response(e)
+
         self.zk_get_linked_notes = zk_get_linked_notes
 
         # Get all tags
@@ -419,7 +438,7 @@ class ZettelkastenMcpServer:
                 tags = self.zettel_service.get_all_tags()
                 if not tags:
                     return "No tags found in the Zettelkasten."
-                
+
                 # Format results
                 output = f"Found {len(tags)} tags:\n\n"
                 # Sort alphabetically
@@ -433,9 +452,7 @@ class ZettelkastenMcpServer:
         # Find similar notes
         @self.mcp.tool(name="zk_find_similar_notes")
         def zk_find_similar_notes(
-            note_id: str,
-            threshold: float = 0.3,
-            limit: int = 5
+            note_id: str, threshold: float = 0.3, limit: int = 5
         ) -> str:
             """Find notes similar to a given note.
             Args:
@@ -445,19 +462,23 @@ class ZettelkastenMcpServer:
             """
             try:
                 # Get similar notes
-                similar_notes = self.zettel_service.find_similar_notes(str(note_id), threshold)
+                similar_notes = self.zettel_service.find_similar_notes(
+                    str(note_id), threshold
+                )
                 # Limit results
                 similar_notes = similar_notes[:limit]
                 if not similar_notes:
                     return f"No similar notes found for {note_id} with threshold {threshold}."
-                
+
                 # Format results
                 output = f"Found {len(similar_notes)} similar notes for {note_id}:\n\n"
                 for i, (note, similarity) in enumerate(similar_notes, 1):
                     output += f"{i}. {note.title} (ID: {note.id})\n"
                     output += f"   Similarity: {similarity:.2f}\n"
                     if note.tags:
-                        output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        output += (
+                            f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        )
                     # Add a snippet of content (first 100 chars)
                     content_preview = note.content[:100].replace("\n", " ")
                     if len(note.content) > 100:
@@ -483,14 +504,16 @@ class ZettelkastenMcpServer:
                 central_notes = self.search_service.find_central_notes(limit)
                 if not central_notes:
                     return "No notes found with connections."
-                
+
                 # Format results
                 output = "Central notes in the Zettelkasten (most connected):\n\n"
                 for i, (note, connection_count) in enumerate(central_notes, 1):
                     output += f"{i}. {note.title} (ID: {note.id})\n"
                     output += f"   Connections: {connection_count}\n"
                     if note.tags:
-                        output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        output += (
+                            f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        )
                     # Add a snippet of content (first 100 chars)
                     content_preview = note.content[:100].replace("\n", " ")
                     if len(note.content) > 100:
@@ -509,13 +532,15 @@ class ZettelkastenMcpServer:
                 orphans = self.search_service.find_orphaned_notes()
                 if not orphans:
                     return "No orphaned notes found."
-                
+
                 # Format results
                 output = f"Found {len(orphans)} orphaned notes:\n\n"
                 for i, note in enumerate(orphans, 1):
                     output += f"{i}. {note.title} (ID: {note.id})\n"
                     if note.tags:
-                        output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        output += (
+                            f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        )
                     # Add a snippet of content (first 100 chars)
                     content_preview = note.content[:100].replace("\n", " ")
                     if len(note.content) > 100:
@@ -528,10 +553,10 @@ class ZettelkastenMcpServer:
         # List notes by date range
         @self.mcp.tool(name="zk_list_notes_by_date")
         def zk_list_notes_by_date(
-            start_date: Optional[str] = None,
-            end_date: Optional[str] = None,
+            start_date: str | None = None,
+            end_date: str | None = None,
             use_updated: bool = False,
-            limit: int = 10
+            limit: int = 10,
         ) -> str:
             """List notes created or updated within a date range.
             Args:
@@ -548,14 +573,14 @@ class ZettelkastenMcpServer:
                 end_datetime = None
                 if end_date:
                     end_datetime = datetime.fromisoformat(f"{end_date}T23:59:59")
-                
+
                 # Get notes
                 notes = self.search_service.find_notes_by_date_range(
                     start_date=start_datetime,
                     end_date=end_datetime,
-                    use_updated=use_updated
+                    use_updated=use_updated,
                 )
-                
+
                 # Limit results
                 notes = notes[:limit]
                 if not notes:
@@ -568,7 +593,7 @@ class ZettelkastenMcpServer:
                     elif end_date:
                         date_range = f" before {end_date}"
                     return f"No notes found {date_type}{date_range}."
-                
+
                 # Format results
                 date_type = "updated" if use_updated else "created"
                 output = f"Notes {date_type}"
@@ -585,7 +610,9 @@ class ZettelkastenMcpServer:
                     output += f"{i}. {note.title} (ID: {note.id})\n"
                     output += f"   {date_type.capitalize()}: {date.strftime('%Y-%m-%d %H:%M')}\n"
                     if note.tags:
-                        output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        output += (
+                            f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
+                        )
                     # Add a snippet of content (first 100 chars)
                     content_preview = note.content[:100].replace("\n", " ")
                     if len(note.content) > 100:
@@ -606,13 +633,13 @@ class ZettelkastenMcpServer:
             try:
                 # Get count before rebuild
                 note_count_before = len(self.zettel_service.get_all_notes())
-                
+
                 # Perform the rebuild
                 self.zettel_service.rebuild_index()
-                
+
                 # Get count after rebuild
                 note_count_after = len(self.zettel_service.get_all_notes())
-                
+
                 # Return a detailed success message
                 return (
                     f"Database index rebuilt successfully.\n"
@@ -652,15 +679,29 @@ class ZettelkastenMcpServer:
         # Use config defaults if not provided
         host = host or config.http_host
         port = port or config.http_port
-        enable_cors = enable_cors if enable_cors is not None else config.http_cors_enabled
+        enable_cors = (
+            enable_cors if enable_cors is not None else config.http_cors_enabled
+        )
 
         if transport == "http":
             # Import here to avoid dependency issues if not using HTTP
             import uvicorn
+            from starlette.responses import JSONResponse
 
-            # Get the base MCP SSE app and wrap it with health check endpoint
-            base_app = self.mcp.sse_app()
-            app = create_app_with_health(base_app)
+            # Add health check route directly to FastMCP to preserve lifespan
+            @self.mcp.custom_route(path="/health", methods=["GET"])
+            async def health_endpoint(request):
+                return JSONResponse(
+                    {
+                        "status": "healthy",
+                        "service": "zettelkasten-mcp",
+                        "transport": "streamable-http",
+                    }
+                )
+
+            # Get the Streamable HTTP app (includes health check now)
+            # Configuration (stateless_http, json_response) is set in FastMCP constructor
+            app = self.mcp.streamable_http_app()
 
             if enable_cors:
                 from starlette.middleware.cors import CORSMiddleware
@@ -668,7 +709,7 @@ class ZettelkastenMcpServer:
                 app = CORSMiddleware(
                     app,
                     allow_origins=config.http_cors_origins,
-                    allow_methods=["GET", "POST", "OPTIONS"],
+                    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
                     allow_headers=["*"],
                     expose_headers=["Mcp-Session-Id"],
                 )

@@ -1,7 +1,10 @@
 """Tests for CLI argument parsing for HTTP transport."""
-import pytest
-from unittest.mock import patch
+
 import sys
+from unittest.mock import patch
+
+import pytest
+
 from zettelkasten_mcp.main import parse_args
 
 
@@ -12,7 +15,7 @@ class TestHTTPCLI:
         """Test that default transport is stdio."""
         test_args = ["program"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.transport == "stdio"
 
@@ -20,7 +23,7 @@ class TestHTTPCLI:
         """Test --transport http argument."""
         test_args = ["program", "--transport", "http"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.transport == "http"
 
@@ -28,7 +31,7 @@ class TestHTTPCLI:
         """Test explicit --transport stdio argument."""
         test_args = ["program", "--transport", "stdio"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.transport == "stdio"
 
@@ -36,7 +39,7 @@ class TestHTTPCLI:
         """Test --host argument."""
         test_args = ["program", "--host", "127.0.0.1"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.host == "127.0.0.1"
 
@@ -44,7 +47,7 @@ class TestHTTPCLI:
         """Test --port argument."""
         test_args = ["program", "--port", "9000"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.port == 9000
 
@@ -52,7 +55,7 @@ class TestHTTPCLI:
         """Test that --port argument is converted to int."""
         test_args = ["program", "--port", "8080"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert isinstance(args.port, int)
             assert args.port == 8080
@@ -61,7 +64,7 @@ class TestHTTPCLI:
         """Test --cors flag."""
         test_args = ["program", "--cors"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.cors is True
 
@@ -69,7 +72,7 @@ class TestHTTPCLI:
         """Test that --cors default is None when not specified."""
         test_args = ["program"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.cors is None
 
@@ -77,13 +80,16 @@ class TestHTTPCLI:
         """Test multiple HTTP arguments together."""
         test_args = [
             "program",
-            "--transport", "http",
-            "--host", "192.168.1.100",
-            "--port", "9500",
-            "--cors"
+            "--transport",
+            "http",
+            "--host",
+            "192.168.1.100",
+            "--port",
+            "9500",
+            "--cors",
         ]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.transport == "http"
             assert args.host == "192.168.1.100"
@@ -94,7 +100,7 @@ class TestHTTPCLI:
         """Test that --host can be specified without --transport."""
         test_args = ["program", "--host", "localhost"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             # host should be set even if transport defaults to stdio
             assert args.host == "localhost"
@@ -104,7 +110,7 @@ class TestHTTPCLI:
         """Test that --port can be specified without --transport."""
         test_args = ["program", "--port", "8080"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             # port should be set even if transport defaults to stdio
             assert args.port == 8080
@@ -114,23 +120,21 @@ class TestHTTPCLI:
         """Test that invalid transport value raises an error."""
         test_args = ["program", "--transport", "invalid"]
 
-        with patch.object(sys, 'argv', test_args):
-            with pytest.raises(SystemExit):
-                parse_args()
+        with patch.object(sys, "argv", test_args), pytest.raises(SystemExit):
+            parse_args()
 
     def test_invalid_port_raises_error(self):
         """Test that invalid port value raises an error."""
         test_args = ["program", "--port", "not_a_number"]
 
-        with patch.object(sys, 'argv', test_args):
-            with pytest.raises(SystemExit):
-                parse_args()
+        with patch.object(sys, "argv", test_args), pytest.raises(SystemExit):
+            parse_args()
 
     def test_log_level_argument(self):
         """Test --log-level argument (ensure HTTP args don't break other args)."""
         test_args = ["program", "--log-level", "DEBUG"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.log_level == "DEBUG"
 
@@ -138,16 +142,22 @@ class TestHTTPCLI:
         """Test all CLI arguments together."""
         test_args = [
             "program",
-            "--transport", "http",
-            "--host", "0.0.0.0",
-            "--port", "8000",
+            "--transport",
+            "http",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8000",
             "--cors",
-            "--log-level", "INFO",
-            "--notes-dir", "/tmp/notes",
-            "--database-path", "/tmp/db/test.db"
+            "--log-level",
+            "INFO",
+            "--notes-dir",
+            "/tmp/notes",
+            "--database-path",
+            "/tmp/db/test.db",
         ]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.transport == "http"
             assert args.host == "0.0.0.0"
@@ -163,7 +173,7 @@ class TestHTTPCLI:
         monkeypatch.setenv("ZETTELKASTEN_HTTP_PORT", "9100")
         test_args = ["program", "--port", "9200"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             # CLI argument should override env var
             assert args.port == 9200
@@ -174,7 +184,7 @@ class TestHTTPCLI:
         monkeypatch.setenv("ZETTELKASTEN_HTTP_PORT", "9100")
         test_args = ["program"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             # When no CLI arg, the env var doesn't affect parse_args
             # (it affects config loading, not arg parsing)
@@ -184,7 +194,7 @@ class TestHTTPCLI:
         """Test that --help flag works."""
         test_args = ["program", "--help"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             with pytest.raises(SystemExit) as exc_info:
                 parse_args()
             # --help exits with code 0
@@ -192,13 +202,9 @@ class TestHTTPCLI:
 
     def test_notes_dir_argument(self):
         """Test --notes-dir argument doesn't interfere with HTTP args."""
-        test_args = [
-            "program",
-            "--transport", "http",
-            "--notes-dir", "/path/to/notes"
-        ]
+        test_args = ["program", "--transport", "http", "--notes-dir", "/path/to/notes"]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.transport == "http"
             assert args.notes_dir == "/path/to/notes"
@@ -207,11 +213,13 @@ class TestHTTPCLI:
         """Test --database-path argument doesn't interfere with HTTP args."""
         test_args = [
             "program",
-            "--transport", "http",
-            "--database-path", "/path/to/db.sqlite"
+            "--transport",
+            "http",
+            "--database-path",
+            "/path/to/db.sqlite",
         ]
 
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             args = parse_args()
             assert args.transport == "http"
             assert args.database_path == "/path/to/db.sqlite"
