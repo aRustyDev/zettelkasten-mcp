@@ -31,5 +31,5 @@ auth:
 inspect:
     npx -y @modelcontextprotocol/inspector http://localhost:8000/sse 2>&1 | head -50 &)
 
-deploy:
-    @docker compose up -d
+deploy profile="prod":
+    @docker compose --profile "{{ profile }}" up -d

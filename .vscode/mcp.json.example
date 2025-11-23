@@ -26,6 +26,11 @@
         "mcp/mcp-python-refactoring"
       ]
     },
+    "container-use": {
+      "type": "stdio",
+      "command": "container-use",
+      "args": ["stdio"]
+    },
     "zettelkasten": {
       "source": "custom",
       "command": "docker",
