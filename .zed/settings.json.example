@@ -1,0 +1,90 @@
+{
+  "context_servers": {
+    "ast-grep": {
+      "source": "custom",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--name",
+        "ast-grep",
+        "--rm",
+        "-v",
+        "$PROJECT_DIR:/data",
+        "mcp/ast-grep"
+      ]
+    },
+    "python-refactor": {
+      "source": "custom",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--name",
+        "python-refactor",
+        "--rm",
+        "mcp/mcp-python-refactoring"
+      ]
+    },
+    "sequential-thinking": {
+      "source": "custom",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--name",
+        "sequential-thinking",
+        "--rm",
+        "mcp/sequentialthinking"
+      ]
+    },
+    "memory": {
+      "source": "custom",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--name",
+        "memory",
+        "--rm",
+        "-v",
+        "claude-memory:/app/dist",
+        "mcp/memory"
+      ]
+    },
+    "container-use": {
+        "source": "custom",
+        "command": "container-use",
+        "args": ["stdio"],
+        "env": {}
+    },
+    "fetch": {
+      "source": "custom",
+      "command": "docker",
+      "args": ["run", "-i", "--name", "fetch", "--rm", "mcp/fetch"]
+    },
+    "mcp/duckduckgo": {
+      "source": "custom",
+      "command": "docker",
+      "args": ["run", "-i", "--name", "duckduckgo", "--rm", "mcp/duckduckgo"]
+    },
+    "github": {
+      "enabled": true,
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${input:github_mcp_pat}"
+      }
+    },
+    "fastmcp": {
+      "enabled": true,
+      "url": "https://gofastmcp.com/mcp"
+    },
+    "zettelkasten": {
+      "enabled": true,
+      "url": "http://mcp.localhost/notes",
+      "headers": {
+        "service": "zettelkasten"
+      }
+    }
+  }
+}
