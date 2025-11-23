@@ -1,0 +1,9 @@
+# Ignore AI assistant artifacts and temporary files
+.ai/
+.pytest_cache/
+node_modules/
+.venv/
+
+# Ignore vendor/third-party docs
+docs/project-knowledge/dev/MCP Python SDK-README.md
+docs/project-knowledge/dev/Example - A simple MCP server that exposes a website fetching tool.md

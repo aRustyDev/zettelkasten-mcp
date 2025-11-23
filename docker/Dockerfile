@@ -25,12 +25,12 @@ VOLUME ["${ZETTELKASTEN_NOTES_DIR}", "${ZETTELKASTEN_DATABASE_DIR}"]
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends git && \
+    apt-get install -y --no-install-recommends git=1:2.39.* && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install uv for Python package management
-RUN pip install --no-cache-dir uv
+RUN pip install --no-cache-dir uv==0.5.15
 
 # Set working directory
 WORKDIR /app
