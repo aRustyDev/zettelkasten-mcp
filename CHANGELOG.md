@@ -45,14 +45,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Health endpoint: ✅ Returns 200 OK with correct JSON
     - POST /mcp endpoint: ✅ Returns 200 OK (NOT 405, NOT 500!)
     - Legacy /sse endpoint: ✅ Returns 404 as expected
-  - Phase 5: Docker & Deployment Updates ✅ Completed (2025-11-22)
-    - Verified Dockerfile CMD: `["--transport", "http"]` ✅ Already correct
+  - Phase 5: Docker & Deployment Updates ✅ Completed (2025-11-23)
+    - Fixed Dockerfile to use local code instead of cloning from GitHub
+    - Removed multi-stage build (repo stage) - now uses build context directly
     - Updated docker-compose.yaml Traefik labels for Streamable HTTP:
       - ❌ Removed: `zettelkasten-sse` router (old `/sse` endpoint)
       - ❌ Removed: `zettelkasten-messages` router (old `/messages/` endpoint)
       - ✅ Added: `zettelkasten-mcp` router (new `/mcp` endpoint)
       - ✅ Kept: Health check router unchanged
-    - Ready for Docker deployment (daemon not available for testing)
+    - Verified Dockerfile CMD: `["--transport", "http"]` ✅ Already correct
+    - Docker deployment fully tested and working:
+      - ✅ Image builds with local code and MCP SDK 1.22.0
+      - ✅ Container starts with Streamable HTTP
+      - ✅ Health endpoint returns `"transport": "streamable-http"`
+      - ✅ POST /mcp endpoint returns 200 OK
+      - ✅ StreamableHTTP session manager initializes properly
 
 ### Added
 - HTTP transport support for the MCP server
