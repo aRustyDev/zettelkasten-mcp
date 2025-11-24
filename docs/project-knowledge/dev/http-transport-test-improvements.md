@@ -1,3 +1,14 @@
+---
+id: 29CC2AEA-AA19-4DAD-B89D-4B7F2E485F9A
+title: HTTP Transport Test Improvements - Future Work
+status: 🔄 Partially Complete
+date: 2025-11-21
+author: aRustyDev
+related:
+  - 2F7850D8-3E51-456C-AE60-C70BAF323BFB  # Plan: Streamable HTTP Implementation
+  - 3A08061A-D4E9-40AC-9B6D-30E7E0888E5E  # Doc: HTTP Transport Testing Report
+---
+
 # HTTP Transport Test Improvements - Future Work
 
 **Date:** 2025-11-21

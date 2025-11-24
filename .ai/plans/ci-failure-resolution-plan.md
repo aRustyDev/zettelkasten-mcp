@@ -1,3 +1,18 @@
+---
+id: 689D75AC-45F1-4CA3-BB4C-AC767EB9BD63
+title: CI Failure Resolution Plan
+status: ✅ Completed
+date: 2025-11-23
+author: aRustyDev
+related:
+  - 2F7850D8-3E51-456C-AE60-C70BAF323BFB  # Streamable HTTP Implementation
+children:
+  - 04F63A86-FAC7-48B0-A1DF-6C9C5A925D6F  # Phase 1: Diagnosis
+  - D45D37BA-511C-42BE-A164-C8D4D40E5E07  # Phase 2: Python Linting
+  - 16F718B1-EB5F-4568-854A-5F8B84B58306  # Phase 3: Dockerfile Linting
+  - 52DA9AE6-520C-44C4-99BD-3EAAFB3E6DFA  # Phase 4: Markdown Linting
+---
+
 # CI Failure Resolution Plan
 
 ## Overview

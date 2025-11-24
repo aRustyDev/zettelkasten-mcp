@@ -1,6 +1,6 @@
 ---
 id: 3EC53936-B5CC-425D-804B-ED865033880B
-title: "Phase 1: Preparation & Analysis"
+title: Phase 1 - Preparation & Analysis
 status: ✅ Completed
 date: 2025-11-22
 author: aRustyDev
@@ -8,7 +8,7 @@ related:
   - 2F7850D8-3E51-456C-AE60-C70BAF323BFB  # Plan: Streamable HTTP Implementation
 ---
 
-# Phase 1: Preparation & Analysis
+# Phase 1 - Preparation & Analysis
 
 **Duration:** 1 hour
 **Status:** ⏸️ Pending

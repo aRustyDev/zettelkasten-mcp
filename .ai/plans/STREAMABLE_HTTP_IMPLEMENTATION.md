@@ -18,7 +18,7 @@ phases:
   - E27EB7DB-14B0-4505-8B5B-2FCA30DF2A23  # Phase 6: Documentation Updates
 ---
 
-# Streamable HTTP Implementation Plan - Option A
+# Streamable HTTP via MCP SDK 1.22.0 Upgrade - Implementation Plan
 
 **Strategy:** Upgrade MCP SDK from 1.6.0 → 1.22.0
 **Estimated Time:** 4-6 hours

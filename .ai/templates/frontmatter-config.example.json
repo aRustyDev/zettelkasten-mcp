@@ -1,0 +1,81 @@
+{
+  "// Schema Version": "1.0 - Configuration schema for frontmatter validator",
+  "// File Location": ".ai/.frontmatter-config.json (optional)",
+  "// Documentation": "See docs/development/frontmatter-validation.md",
+
+  "version": "1.0",
+
+  "// SCAN CONFIGURATION": "Defines which files to validate",
+  "scan": {
+    "// directories": "List of base directories to scan for markdown files",
+    "directories": [
+      ".ai",
+      "docs"
+    ],
+
+    "// exclude_patterns": "Glob patterns to exclude from validation",
+    "// Supports standard glob syntax: **/pattern/**",
+    "exclude_patterns": [
+      "**/templates/**",
+      "**/artifacts/**",
+      "**/prompts/**",
+      "docs/project-knowledge/user/**"
+    ]
+  },
+
+  "// VALIDATION CONFIGURATION": "Defines validation rules",
+  "validation": {
+    "// required_fields": "Frontmatter fields that must be present",
+    "required_fields": [
+      "id",
+      "title",
+      "status",
+      "date",
+      "author"
+    ],
+
+    "// validate_cross_references": "Check that UUIDs in 'related' and 'children' exist",
+    "validate_cross_references": true,
+
+    "// title_must_match_h1": "Warn if frontmatter title differs from H1 heading",
+    "title_must_match_h1": true
+  },
+
+  "// CACHE CONFIGURATION": "Optional performance optimization",
+  "cache": {
+    "// enabled": "Enable UUID cache for faster repeated validation",
+    "// Default: false (conservative, predictable)",
+    "// Set to true for projects with many files (>50)",
+    "enabled": false,
+
+    "// path": "Location to store cache file",
+    "// Make sure to add this to .gitignore",
+    "path": ".ai/.uuid-cache.json",
+
+    "// ttl_seconds": "Time-to-live for cache in seconds",
+    "// null = no expiration (cache valid until invalidation trigger)",
+    "// 3600 = 1 hour, 86400 = 24 hours",
+    "ttl_seconds": null
+  },
+
+  "// USAGE EXAMPLES": {
+    "// Minimal config (enable cache only)": {
+      "cache": {
+        "enabled": true
+      }
+    },
+
+    "// Scan only .ai directory": {
+      "scan": {
+        "directories": [".ai"]
+      }
+    },
+
+    "// Development mode (fast, with TTL)": {
+      "cache": {
+        "enabled": true,
+        "ttl_seconds": 3600
+      }
+    }
+  }
+}

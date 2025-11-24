@@ -51,8 +51,8 @@ repos:
     hooks:
       - id: validate-frontmatter
         name: Validate Markdown Frontmatter
-        entry: python3 .ai/scripts/validate-frontmatter.py
+        entry: python3 .ai/scripts/validate-frontmatter.py --config .ci/.frontmatter-config.json
         language: system
         files: \.md$
-        exclude: ^(README\.md|CHANGELOG\.md|\.github/.*\.md)$
+        exclude: ^(README\.md|CHANGELOG\.md|\.github/.*\.md|\.ai/templates/.*|\.ai/artifacts/.*|docs/prompts/.*|docs/project-knowledge/user/.*)$
         pass_filenames: true

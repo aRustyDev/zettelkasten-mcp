@@ -10,7 +10,7 @@ related:
   - 2F7850D8-3E51-456C-AE60-C70BAF323BFB  # Plan: Streamable HTTP Implementation
 ---
 
-# FastMCP Deep Dive: Option A vs Option B Comparison
+# FastMCP Deep Dive - Option A vs Option B Comparison
 
 **Research Date:** 2025-11-22
 **Author:** aRustyDev

@@ -1,6 +1,6 @@
 ---
 id: F628B564-5D2F-4A64-A658-4FDA04E2256D
-title: "Phase 3: Code Updates for Streamable HTTP"
+title: Phase 3 - Code Updates for Streamable HTTP
 status: ✅ Completed
 date: 2025-11-22
 author: aRustyDev
@@ -9,7 +9,7 @@ related:
   - 4F557F9D-D5A9-4ACD-88D2-C741353CAC20  # Phase 2: Upgrade Dependencies
 ---
 
-# Phase 3: Code Updates for Streamable HTTP
+# Phase 3 - Code Updates for Streamable HTTP
 
 **Duration:** 1-2 hours
 **Status:** ⏸️ Pending
