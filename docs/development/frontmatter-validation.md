@@ -45,12 +45,14 @@ python3 .ai/scripts/validate-frontmatter.py -g '.ai/**/*.md'
 | Option | Short | Description |
 |--------|-------|-------------|
 | `--config PATH` | `-c` | Path to config file (default: `.ai/.frontmatter-config.json`) |
+| `--cache PATH` | - | Path to UUID cache file (overrides config setting) |
 | `--glob PATTERN` | `-g` | Glob pattern to match files |
 | `--help` | `-h` | Show help message and exit |
 
 **Examples:**
 - `python3 .ai/scripts/validate-frontmatter.py --help` - View all options
 - `python3 .ai/scripts/validate-frontmatter.py -c custom.json file.md` - Use custom config
+- `python3 .ai/scripts/validate-frontmatter.py --cache /tmp/cache.json file.md` - Use custom cache location
 - `python3 .ai/scripts/validate-frontmatter.py --glob '.ai/**/*.md'` - Validate all markdown in .ai/
 
 ### With Pre-commit
@@ -583,6 +585,33 @@ You can also use the short form `-c`:
 ```bash
 python3 .ai/scripts/validate-frontmatter.py -c custom.json file.md
 ```
+
+### Q: When should I use a custom cache location?
+
+**A:** Use the `--cache` flag when you need to:
+
+1. **Isolate cache for testing:**
+```bash
+# Use temporary cache for tests
+python3 .ai/scripts/validate-frontmatter.py --cache /tmp/test-cache.json file.md
+```
+
+2. **Different cache per environment:**
+```bash
+# Development cache
+python3 .ai/scripts/validate-frontmatter.py --cache .ai/.dev-cache.json file.md
+
+# CI cache (ephemeral)
+python3 .ai/scripts/validate-frontmatter.py --cache /tmp/ci-cache.json file.md
+```
+
+3. **Shared cache location:**
+```bash
+# Team shared cache on network drive
+python3 .ai/scripts/validate-frontmatter.py --cache /mnt/shared/uuid-cache.json file.md
+```
+
+The `--cache` flag overrides the `cache.path` setting in your config file.
 
 ### Q: How do I debug validation failures?
 

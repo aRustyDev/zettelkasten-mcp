@@ -13,6 +13,12 @@ python3 .ai/scripts/validate-frontmatter.py file1.md file2.md
 python3 .ai/scripts/validate-frontmatter.py --config /path/to/config.json file.md
 python3 .ai/scripts/validate-frontmatter.py -c /path/to/config.json file.md
 
+# Use custom cache file
+python3 .ai/scripts/validate-frontmatter.py --cache /tmp/uuid-cache.json file.md
+
+# Use both custom config and cache
+python3 .ai/scripts/validate-frontmatter.py --config custom.json --cache /tmp/cache.json file.md
+
 # Validate using glob pattern
 python3 .ai/scripts/validate-frontmatter.py --glob '.ai/plans/**/*.md'
 
