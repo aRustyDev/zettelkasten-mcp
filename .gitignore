@@ -46,7 +46,7 @@ htmlcov/
 .ruff_cache/
 
 # Frontmatter validator cache
-.ai/.uuid-cache.json
+*-cache.json
 
 # Local configuration
 config.local.json
