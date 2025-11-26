@@ -47,12 +47,7 @@ repos:
         stages: [commit-msg]
         additional_dependencies:
           ["@commitlint/cli", "@commitlint/config-conventional"]
-  - repo: local
+  - repo: https://github.com/aRustyDev/pre-commit-hooks
+    rev: v0.3.2 # Latest commit with pip installable package
     hooks:
       - id: validate-frontmatter
-        name: Validate Markdown Frontmatter
-        entry: python3 .ai/scripts/validate-frontmatter.py --config .ci/.frontmatter-config.json --cache ./data/uuid-cache.json
-        language: system
-        files: \.md$
-        exclude: ^(README\.md|CHANGELOG\.md|\.github/.*\.md|\.ai/templates/.*|\.ai/artifacts/.*|docs/prompts/.*|docs/project-knowledge/user/.*)$
-        pass_filenames: true
