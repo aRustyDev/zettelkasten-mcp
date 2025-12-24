@@ -3,8 +3,30 @@ name: Lint Code
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.ai/**'
+      - 'docker/**'
+      - '.github/workflows/**'
+      - '.ci/**'
+      - '**/*.md'
+      - 'pyproject.toml'
   pull_request:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.ai/**'
+      - 'docker/**'
+      - '.github/workflows/**'
+      - '.ci/**'
+      - '**/*.md'
+      - 'pyproject.toml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   lint-python:

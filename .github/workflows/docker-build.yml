@@ -3,13 +3,26 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'docker/**'
+      - 'pyproject.toml'
+      - '.github/workflows/docker-build.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'docker/**'
+      - 'pyproject.toml'
+      - '.github/workflows/docker-build.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   REGISTRY_GHCR: ghcr.io
-  REGISTRY_DOCKERHUB: docker.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -34,21 +47,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Log in to Docker Hub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY_DOCKERHUB }}
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
             ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
-            ${{ env.REGISTRY_DOCKERHUB }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
