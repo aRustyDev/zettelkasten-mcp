@@ -42,6 +42,7 @@ Cache Schema (./data/.uuid-cache.json):
 """
 
 import argparse
+import contextlib
 import hashlib
 import json
 import re
@@ -296,10 +297,9 @@ class FrontmatterValidator:
             return  # Already prepared
 
         # Try cache first (if enabled)
-        if self.config["cache"]["enabled"]:
-            if self._load_uuid_cache():
-                self._uuid_map_ready = True
-                return  # Cache hit!
+        if self.config["cache"]["enabled"] and self._load_uuid_cache():
+            self._uuid_map_ready = True
+            return  # Cache hit!
 
         # Cache miss or disabled - do full discovery
         self._discover_all_uuids()
@@ -528,11 +528,8 @@ class FrontmatterValidator:
             cache["uuids"][uuid] = file_str
 
             if file_path.exists():
-                try:
+                with contextlib.suppress(OSError):
                     cache["file_mtimes"][file_str] = file_path.stat().st_mtime
-                except OSError:
-                    # Can't stat file, skip mtime
-                    pass
 
         # Ensure directory exists
         try:
@@ -540,7 +537,7 @@ class FrontmatterValidator:
 
             # Write cache
             cache_path.write_text(json.dumps(cache, indent=2))
-        except (OSError, IOError):
+        except OSError:
             # Don't fail validation if cache save fails
             pass
 
